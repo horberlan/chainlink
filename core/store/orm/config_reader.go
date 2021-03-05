@@ -46,6 +46,7 @@ type ConfigReader interface {
 	EthReceiptFetchBatchSize() uint32
 	EthHeadTrackerHistoryDepth() uint
 	EthHeadTrackerMaxBufferSize() uint
+	EthTxBaseFeeWei() *big.Int
 	SetEthGasPriceDefault(value *big.Int) error
 	EthereumURL() string
 	EthereumSecondaryURLs() []url.URL

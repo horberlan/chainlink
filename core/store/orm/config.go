@@ -367,8 +367,20 @@ func (c Config) EthBalanceMonitorBlockDelay() uint16 {
 	return c.getWithFallback("EthBalanceMonitorBlockDelay", parseUint16).(uint16)
 }
 
+// EthReceiptFetchBatchSize controls the number of receipts fetched in each
+// request in the EthConfirmer
 func (c Config) EthReceiptFetchBatchSize() uint32 {
 	return c.viper.GetUint32(EnvVarName("EthReceiptFetchBatchSize"))
+}
+
+// EthTxBaseFeeWei determines the minimum transaction price in Wei for an Ethereum transaction
+// https://eth.wiki/en/fundamentals/design-rationale
+// > 21000 gas is charged for any transaction as a “base fee”. This covers the
+// > cost of an elliptic curve operation to recover the sender address from the
+// > signature as well as the disk and bandwidth space of storing the
+// > transaction.
+func (c Config) EthTxBaseFeeWei() *big.Int {
+	return c.getWithFallback("EthTxBaseFeeWei", parseBigInt).(*big.Int)
 }
 
 // EthGasBumpThreshold is the number of blocks to wait for confirmations before bumping gas again

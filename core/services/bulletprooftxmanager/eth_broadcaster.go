@@ -5,6 +5,8 @@ package bulletprooftxmanager
 import (
 	"context"
 	"fmt"
+	"math/big"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,7 +17,9 @@ import (
 	"github.com/smartcontractkit/chainlink/core/store/models"
 	"github.com/smartcontractkit/chainlink/core/store/orm"
 	"github.com/smartcontractkit/chainlink/core/utils"
+	"go.uber.org/multierr"
 
+	"github.com/ethereum/go-ethereum/common"
 	gethCommon "github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
@@ -54,20 +58,24 @@ type ethBroadcaster struct {
 	// trigger allows other goroutines to force ethBroadcaster to rescan the
 	// database early (before the next poll interval)
 	trigger chan struct{}
-	chStop  chan struct{}
-	wg      sync.WaitGroup
+
+	ctx       context.Context
+	ctxCancel context.CancelFunc
+	wg        sync.WaitGroup
 
 	utils.StartStopOnce
 }
 
 // NewEthBroadcaster returns a new concrete ethBroadcaster
 func NewEthBroadcaster(store *store.Store, config orm.ConfigReader, eventBroadcaster postgres.EventBroadcaster) EthBroadcaster {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &ethBroadcaster{
 		store:            store,
 		config:           config,
 		ethClient:        store.EthClient,
 		trigger:          make(chan struct{}, 1),
-		chStop:           make(chan struct{}),
+		ctx:              ctx,
+		ctxCancel:        cancel,
 		wg:               sync.WaitGroup{},
 		eventBroadcaster: eventBroadcaster,
 	}
@@ -82,6 +90,10 @@ func (eb *ethBroadcaster) Start() error {
 	eb.ethTxInsertListener, err = eb.eventBroadcaster.Subscribe(postgres.ChannelInsertOnEthTx, "")
 	if err != nil {
 		return errors.Wrap(err, "EthBroadcaster could not start")
+	}
+
+	if err := eb.fastForwardNoncesIfNecessary(); err != nil {
+		return errors.Wrap(err, "EthBroadcaster failed to sync local nonce with on-chain nonce")
 	}
 
 	eb.wg.Add(1)
@@ -102,7 +114,7 @@ func (eb *ethBroadcaster) Close() error {
 		eb.ethTxInsertListener.Close()
 	}
 
-	close(eb.chStop)
+	eb.ctxCancel()
 	eb.wg.Wait()
 
 	return nil
@@ -115,13 +127,116 @@ func (eb *ethBroadcaster) Trigger() {
 	}
 }
 
+func (eb *ethBroadcaster) fastForwardNoncesIfNecessary() (merr error) {
+	keys, err := eb.store.SendKeys()
+
+	if err != nil {
+		return err
+	}
+	var wg sync.WaitGroup
+	var errMu sync.Mutex
+
+	wg.Add(len(keys))
+	for _, key := range keys {
+		go func(k models.Key) {
+			defer wg.Done()
+			if err := eb.fastForwardNonceIfNecessary(k.Address.Address()); err != nil {
+				errMu.Lock()
+				defer errMu.Unlock()
+				merr = multierr.Combine(merr, err)
+			}
+		}(key)
+	}
+
+	wg.Wait()
+
+	return merr
+}
+
+// TODO: Dox
+func (eb *ethBroadcaster) fastForwardNonceIfNecessary(address common.Address) error {
+	// FIXME: Batch this request?
+	// TODO: pending vs confirmed?
+	chainNonce, err := eb.pendingNonceFromEthClient(address)
+	if err != nil {
+		return errors.Wrap(err, "GetNextNonce failed to loadInitialNonceFromEthClient")
+	}
+	if chainNonce == 0 {
+		return nil
+	}
+
+	localNonce, err := GetNextNonce(eb.store.DB, address)
+	if err != nil {
+		return err
+	}
+	if chainNonce <= uint64(localNonce) {
+		return nil
+	}
+
+	// TODO: This log
+	logger.Warnw(fmt.Sprintf("EthBroadcaster: address %s has been used before, either by an external wallet or a different Chainlink node. "+
+		"Local nonce is %v but the eth node returned %v. "+
+		"Please note that using the chainlink keys with an external wallet is NOT SUPPORTED and can lead to missed or stuck transactions. "+
+		"This Chainlink node will now take ownership of this address and may overwrite currently pending transactions",
+		address.Hex(), localNonce, chainNonce),
+		"address", address.Hex(), "localNonce", localNonce, "chainNonce", chainNonce)
+
+	backfillToNonce := chainNonce - 1
+	backfillFromNonce := int64(backfillToNonce) - int64(eb.config.EthFinalityDepth())
+	if backfillFromNonce < int64(localNonce) {
+		backfillFromNonce = int64(localNonce)
+	}
+
+	return postgres.GormTransaction(eb.ctx, eb.store.DB, func(tx *gorm.DB) error {
+		// NOTE: We pass in next_nonce here as an optimistic lock to make sure
+		// it didn't get changed out from under us
+		res := tx.Exec(`UPDATE keys SET next_nonce = ? WHERE address = ? AND next_nonce = ?`, chainNonce, address, localNonce)
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return errors.Errorf("EthBroadcaster#fastForwardNonceIfNecessary optimistic lock failure fastforwarding nonce %v to %v for key %s", localNonce, chainNonce, address.Hex())
+		}
+		// NOTE: It is not possible to query transactions for an account using ethereum RPC (they are not indexed)
+		// This is for re-org protection only, so we can simply insert zero transactions
+		return insertZeroTransactions(tx, eb.config.EthTxBaseFeeWei(), address, uint64(backfillFromNonce), backfillToNonce)
+
+	})
+}
+
+func (eb *ethBroadcaster) pendingNonceFromEthClient(account gethCommon.Address) (nextNonce uint64, err error) {
+	ctx, cancel := context.WithTimeout(eb.ctx, maxEthNodeRequestTime)
+	defer cancel()
+	nextNonce, err = eb.ethClient.PendingNonceAt(ctx, account)
+	return nextNonce, errors.WithStack(err)
+}
+
+func insertZeroTransactions(tx *gorm.DB, gasLimit *big.Int, fromAddress common.Address, fromNonce, toNonce uint64) error {
+	if fromNonce > toNonce {
+		return errors.Errorf("fromNonce of %v was greater than toNonce of %v", fromNonce, toNonce)
+	}
+	var valueStrs []string
+	var valueArgs []interface{}
+	for n := fromNonce; n <= toNonce; n++ {
+		valueStrs = append(valueStrs, "(?,?,?,?,?,?,?,NOW(),NOW())")
+		valueArgs = append(valueArgs, n, fromAddress, fromAddress, []byte{}, 0, gasLimit.Int64(), models.EthTxConfirmedMissingReceipt)
+	}
+
+	/* #nosec G201 */
+	sql := `INSERT INTO eth_txes (nonce, from_address, to_address, encoded_payload, value, gas_limit, state, broadcast_at, created_at) VALUES %s`
+
+	stmt := fmt.Sprintf(sql, strings.Join(valueStrs, ","))
+	return tx.Exec(stmt, valueArgs...).Error
+
+}
+
 func (eb *ethBroadcaster) ethTxInsertTriggerer() {
 	defer eb.wg.Done()
 	for {
 		select {
 		case <-eb.ethTxInsertListener.Events():
 			eb.Trigger()
-		case <-eb.chStop:
+		case <-eb.ctx.Done():
 			return
 		}
 	}
@@ -156,7 +271,7 @@ func (eb *ethBroadcaster) monitorEthTxs() {
 		}
 
 		select {
-		case <-eb.chStop:
+		case <-eb.ctx.Done():
 			// NOTE: See: https://godoc.org/time#Timer.Stop for an explanation of this pattern
 			if !pollDBTimer.Stop() {
 				<-pollDBTimer.C
@@ -258,7 +373,7 @@ func (eb *ethBroadcaster) handleInProgressEthTx(etx models.EthTx, attempt models
 		return errors.Errorf("invariant violation: expected transaction %v to be in_progress, it was %s", etx.ID, etx.State)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), maxEthNodeRequestTime)
+	ctx, cancel := context.WithTimeout(eb.ctx, maxEthNodeRequestTime)
 	defer cancel()
 	sendError := sendTransaction(ctx, eb.ethClient, attempt)
 
@@ -366,7 +481,7 @@ func (eb *ethBroadcaster) nextUnstartedTransactionWithNonce(fromAddress gethComm
 		return nil, errors.Wrap(err, "findNextUnstartedTransactionFromAddress failed")
 	}
 
-	nonce, err := eb.getNextNonceWithInitialLoad(etx.FromAddress)
+	nonce, err := GetNextNonce(eb.store.DB, etx.FromAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -471,60 +586,13 @@ func saveFatallyErroredTransaction(store *store.Store, etx *models.EthTx) error 
 }
 
 // GetNextNonce returns keys.next_nonce for the given address
-func GetNextNonce(db *gorm.DB, address gethCommon.Address) (*int64, error) {
-	var nonce *int64
+func GetNextNonce(db *gorm.DB, address gethCommon.Address) (int64, error) {
+	var nonce int64
 	row := db.Raw("SELECT next_nonce FROM keys WHERE address = ?", address).Row()
 	if err := row.Scan(&nonce); err != nil {
-		return nil, errors.Wrap(err, "GetNextNonce failed scanning row")
+		return 0, errors.Wrap(err, "GetNextNonce failed scanning row")
 	}
 	return nonce, nil
-}
-
-// getNextNonce returns keys.next_nonce for the given address
-// It loads it from the database, or if this is a brand new key, queries the eth node for the latest nonce
-func (eb *ethBroadcaster) getNextNonceWithInitialLoad(address gethCommon.Address) (int64, error) {
-	nonce, err := GetNextNonce(eb.store.DB, address)
-	if err != nil {
-		return 0, err
-	}
-	if nonce != nil {
-		return *nonce, nil
-	}
-
-	return eb.loadAndSaveNonce(address)
-}
-
-func (eb *ethBroadcaster) loadAndSaveNonce(address gethCommon.Address) (int64, error) {
-	logger.Debugw("EthBroadcaster: loading next nonce from eth node", "address", address.Hex())
-	nonce, err := eb.loadInitialNonceFromEthClient(address)
-	if err != nil {
-		return 0, errors.Wrap(err, "GetNextNonce failed to loadInitialNonceFromEthClient")
-	}
-	res := eb.store.DB.Exec(`UPDATE keys SET next_nonce = ? WHERE next_nonce IS NULL AND address = ?`, nonce, address)
-	if res.Error != nil {
-		return 0, errors.Wrap(err, "GetNextNonce failed to save new nonce loaded from eth client")
-	}
-	if res.RowsAffected == 0 {
-		return 0, errors.Errorf("GetNextNonce optimistic locking failed; someone else modified key %s", address.Hex())
-	}
-	if nonce == 0 {
-		logger.Infow(fmt.Sprintf("EthBroadcaster: first use of address %s, starting from nonce 0",
-			address.Hex()), "address", address.Hex(), "nextNonce", nonce)
-	} else {
-		logger.Warnw(fmt.Sprintf("EthBroadcaster: address %s has been used before. Starting from nonce %v."+
-			" Please note that using the chainlink keys with an external wallet is NOT SUPPORTED and can lead to missed or stuck transactions.",
-			address.Hex(), nonce),
-			"address", address.Hex(), "nextNonce", nonce)
-	}
-
-	return int64(nonce), nil
-}
-
-func (eb *ethBroadcaster) loadInitialNonceFromEthClient(account gethCommon.Address) (nextNonce uint64, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), maxEthNodeRequestTime)
-	defer cancel()
-	nextNonce, err = eb.ethClient.PendingNonceAt(ctx, account)
-	return nextNonce, errors.WithStack(err)
 }
 
 // IncrementNextNonce increments keys.next_nonce by 1

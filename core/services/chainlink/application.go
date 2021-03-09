@@ -96,6 +96,7 @@ type Application interface {
 type ChainlinkApplication struct {
 	Exiter      func(int)
 	HeadTracker *services.HeadTracker
+	HeadRelayer *services.HeadRelayer
 	StatsPusher synchronization.StatsPusher
 	services.RunManager
 	RunQueue                 services.RunQueue
@@ -167,7 +168,7 @@ func NewApplication(config *orm.Config, ethClient eth.Client, advisoryLocker pos
 	fluxMonitor := fluxmonitor.New(store, runManager, logBroadcaster)
 	ethBroadcaster := bulletprooftxmanager.NewEthBroadcaster(store, config, eventBroadcaster)
 	ethConfirmer := bulletprooftxmanager.NewEthConfirmer(store, config)
-	upkeepExecutor := keeper.NewUpkeepExecutor(store.DB, store.EthClient)
+	headRelayer := services.NewHeadRelayer()
 	var balanceMonitor services.BalanceMonitor
 	if config.BalanceMonitorEnabled() {
 		balanceMonitor = services.NewBalanceMonitor(store)
@@ -188,7 +189,7 @@ func NewApplication(config *orm.Config, ethClient eth.Client, advisoryLocker pos
 				pipelineRunner,
 				store.DB,
 			),
-			job.Keeper: keeper.NewDelegate(store.DB, store.EthClient, config),
+			job.Keeper: keeper.NewDelegate(store.DB, store.EthClient, headRelayer, config),
 		}
 	)
 
@@ -230,13 +231,14 @@ func NewApplication(config *orm.Config, ethClient eth.Client, advisoryLocker pos
 		logger.Debug("Off-chain reporting disabled")
 	}
 	jobSpawner := job.NewSpawner(jobORM, store.Config, delegates)
-	subservices = append(subservices, jobSpawner, pipelineRunner, ethBroadcaster, ethConfirmer, upkeepExecutor)
+	subservices = append(subservices, jobSpawner, pipelineRunner, ethBroadcaster, ethConfirmer, headRelayer)
 
 	store.NotifyNewEthTx = ethBroadcaster
 
 	pendingConnectionResumer := newPendingConnectionResumer(runManager)
 
 	app := &ChainlinkApplication{
+		HeadRelayer:              headRelayer,
 		JobSubscriber:            jobSubscriber,
 		EthBroadcaster:           ethBroadcaster,
 		LogBroadcaster:           logBroadcaster,
@@ -270,7 +272,7 @@ func NewApplication(config *orm.Config, ethClient eth.Client, advisoryLocker pos
 		balanceMonitor,
 		promReporter,
 		logBroadcaster,
-		upkeepExecutor,
+		headRelayer,
 	)
 
 	for _, onConnectCallback := range onConnectCallbacks {

@@ -4,6 +4,7 @@ import (
 	"context"
 	stderr "errors"
 	"fmt"
+	"github.com/smartcontractkit/chainlink/core/services/periodicbackup"
 	"os"
 	"os/signal"
 	"reflect"
@@ -155,6 +156,14 @@ func NewApplication(config *orm.Config, ethClient eth.Client, advisoryLocker pos
 		headTrackables = append(headTrackables, gasUpdater)
 	} else {
 		logger.Debugw("GasUpdater: dynamic gas updating is disabled", "ethGasPriceDefault", store.Config.EthGasPriceDefault())
+	}
+
+	if store.Config.DatabaseBackupFrequency() > 0 {
+		logger.Debug("PeriodicBackup: database backups are enabled")
+		periodicBackup := periodicbackup.NewBackgroundBackup(store.Config.DatabaseBackupFrequency(), store.Config.DatabaseURL(), config.RootDir(), logger.Default)
+		subservices = append(subservices, periodicBackup)
+	} else {
+		logger.Debug("PeriodicBackup: database backups are disabled")
 	}
 
 	runExecutor := services.NewRunExecutor(store, statsPusher)

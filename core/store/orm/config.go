@@ -264,6 +264,12 @@ func (c Config) DatabaseMaximumTxDuration() time.Duration {
 	return c.getWithFallback("DatabaseMaximumTxDuration", parseDuration).(time.Duration)
 }
 
+// DatabaseBackupFrequency turns on the periodic database backup if set to a positive value
+// It is disabled by default
+func (c Config) DatabaseBackupFrequency() time.Duration {
+	return c.getWithFallback("DatabaseBackupFrequency", parseDuration).(time.Duration)
+}
+
 // DatabaseTimeout represents how long to tolerate non response from the DB.
 func (c Config) DatabaseTimeout() models.Duration {
 	return models.MustMakeDuration(c.getWithFallback("DatabaseTimeout", parseDuration).(time.Duration))

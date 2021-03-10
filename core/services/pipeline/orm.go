@@ -99,7 +99,7 @@ func (o *orm) CreateSpec(ctx context.Context, tx *gorm.DB, taskDAG TaskDAG, maxT
 	// outputs.  This is a Postgres-related performance optimization.
 	resultTask := ResultTask{BaseTask{dotID: ResultTaskDotID}}
 	for _, task := range tasks {
-		if task.DotID() == ResultTaskDotID {
+		if task.GetDotID() == ResultTaskDotID {
 			return specID, errors.Errorf("%v is a reserved keyword and cannot be used in job specs", ResultTaskDotID)
 		}
 		if task.OutputTask() == nil {
@@ -117,7 +117,7 @@ func (o *orm) CreateSpec(ctx context.Context, tx *gorm.DB, taskDAG TaskDAG, maxT
 		}
 
 		taskSpec := TaskSpec{
-			DotID:          task.DotID(),
+			DotID:          task.GetDotID(),
 			PipelineSpecID: spec.ID,
 			Type:           task.Type(),
 			JSON:           JSONSerializable{task, false},
@@ -334,11 +334,16 @@ func (o *orm) InsertFinishedRunWithResults(ctx context.Context, run Run, trrs []
 
 		runID = run.ID
 
+		//sql := `
+		//INSERT INTO pipeline_task_runs (pipeline_run_id, type, index, output, error, pipeline_task_spec_id, created_at, finished_at)
+		//SELECT ?, pts.type, pts.index, ptruns.output, ptruns.error, pts.id, ptruns.created_at, ptruns.finished_at
+		//FROM (VALUES %s) ptruns (pipeline_task_spec_id, output, error, created_at, finished_at)
+		//JOIN pipeline_task_specs pts ON pts.id = ptruns.pipeline_task_spec_id
+		//`
 		sql := `
-		INSERT INTO pipeline_task_runs (pipeline_run_id, type, index, output, error, pipeline_task_spec_id, created_at, finished_at)
-		SELECT ?, pts.type, pts.index, ptruns.output, ptruns.error, pts.id, ptruns.created_at, ptruns.finished_at
+		INSERT INTO pipeline_task_runs (pipeline_run_id, type, index, output, error, dot_id, created_at, finished_at)
+		SELECT ?, pts.type, 0, ptruns.output, ptruns.error, pts.id, ptruns.created_at, ptruns.finished_at
 		FROM (VALUES %s) ptruns (pipeline_task_spec_id, output, error, created_at, finished_at)
-		JOIN pipeline_task_specs pts ON pts.id = ptruns.pipeline_task_spec_id
 		`
 
 		valueStrings := []string{}

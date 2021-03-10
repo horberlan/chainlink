@@ -80,7 +80,7 @@ func TestPipelineORM_Integration(t *testing.T) {
 	var expectedTaskSpecs []pipeline.TaskSpec
 	for _, task := range expectedTasks {
 		expectedTaskSpecs = append(expectedTaskSpecs, pipeline.TaskSpec{
-			DotID:          task.DotID(),
+			DotID:          task.GetDotID(),
 			PipelineSpecID: specID,
 			Type:           task.Type(),
 			JSON:           pipeline.JSONSerializable{Val: task},

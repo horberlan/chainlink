@@ -195,3 +195,24 @@ func TestGraph_HasCycles(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, g.HasCycles())
 }
+
+//func TestGraph_NoPreds(t *testing.T) {
+//	d := TaskDAG{}
+//	d.UnmarshalText([]byte(`
+//		a [type=bridge];
+//		b [type=multiply times=1.23];
+//		c [type=bridge];
+//		d [type=multiply times=1.23];
+//		e [type=http url="http://blah.com"];
+//		f [type=median]
+//		a->b->f;
+//		c->d->f;
+//		e->f;
+//	`))
+//	np, err := d.TasksWithNoPreds()
+//	require.NoError(t, err)
+//	assert.Equal(t, np[0].GetDotID(), "c")
+//	require.NoError(t, err)
+//	assert.Equal(t, np[1].GetDotID(), "e")
+//	assert.Equal(t, np[2].GetDotID(), "a")
+//}

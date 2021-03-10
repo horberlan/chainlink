@@ -123,7 +123,7 @@ func (o *orm) ClaimUnclaimedJobs(ctx context.Context) ([]SpecDB, error) {
 	err := o.db.
 		Joins(join, args...).
 		Preload("OffchainreportingOracleSpec").
-		Preload("PipelineSpec.PipelineTaskSpecs").
+		Preload("PipelineSpec").
 		Find(&newlyClaimedJobs).Error
 	if err != nil {
 		return nil, errors.Wrap(err, "ClaimUnclaimedJobs failed to load jobs")
@@ -340,6 +340,7 @@ func (o *orm) PipelineRunsByJobID(jobID int32, offset, size int) ([]pipeline.Run
 		return pipelineRuns, 0, err
 	}
 
+	// TODO don't use pipeline task specs here
 	err = o.db.
 		Preload("PipelineSpec").
 		Preload("PipelineTaskRuns", func(db *gorm.DB) *gorm.DB {

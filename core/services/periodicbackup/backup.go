@@ -86,7 +86,7 @@ func (backup *PeriodicBackup) RunBackup() error {
   }
 
   cmd := exec.Command(
-    "pg_dump", backup.databaseURL.String(),
+    "docker exec postgres pg_dump", backup.databaseURL.String(),
     "-f", tmpFile.Name(),
     "-F", "t", // format: tar
   )
@@ -109,5 +109,6 @@ func (backup *PeriodicBackup) RunBackup() error {
     return errors.Wrap(err, "Failed to rename the temp file to the final backup file")
   }
 
+  //TODO: verify that the file exists
   return nil
 }

@@ -2,16 +2,15 @@ package job_test
 
 import (
 	"context"
+	"github.com/jackc/pgtype"
+	"github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
-
-	"github.com/jackc/pgtype"
 
 	"github.com/smartcontractkit/chainlink/core/services/eth"
 	"github.com/smartcontractkit/chainlink/core/store/models"
 
-	"github.com/onsi/gomega"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
@@ -136,6 +135,8 @@ func TestSpawner_CreateJobDeleteJob(t *testing.T) {
 		serviceB2.AssertExpectations(t)
 	})
 
+	clearDB(t, db)
+
 	t.Run("starts job services from the DB when .Start() is called", func(t *testing.T) {
 		jobSpecA := makeOCRJobSpec(t, address)
 		jobSpecA.Type = jobTypeA
@@ -167,6 +168,8 @@ func TestSpawner_CreateJobDeleteJob(t *testing.T) {
 		serviceA2.On("Close").Return(nil).Once()
 	})
 
+	clearDB(t, db)
+
 	t.Run("stops job services when .Stop() is called", func(t *testing.T) {
 		jobSpecA := makeOCRJobSpec(t, address)
 		jobSpecA.Type = jobTypeA
@@ -174,9 +177,6 @@ func TestSpawner_CreateJobDeleteJob(t *testing.T) {
 		eventually := cltest.NewAwaiter()
 		serviceA1 := new(mocks.Service)
 		serviceA2 := new(mocks.Service)
-		serviceA1.On("Start").Return(nil).Once()
-		serviceA2.On("Start").Return(nil).Once().Run(func(mock.Arguments) { eventually.ItHappened() })
-
 		orm := job.NewORM(db, config.Config, pipeline.NewORM(db, config, eventBroadcaster), eventBroadcaster, &postgres.NullAdvisoryLocker{})
 		defer orm.Close()
 		delegateA := &delegate{jobTypeA, []job.Service{serviceA1, serviceA2}, 0, nil, offchainreporting.NewDelegate(nil, orm, nil, nil, nil, eth.NewClientWith(rpc, geth), nil, nil, monitoringEndpoint)}
@@ -184,6 +184,8 @@ func TestSpawner_CreateJobDeleteJob(t *testing.T) {
 			jobTypeA: delegateA,
 		})
 
+		serviceA1.On("Start").Return(nil).Once()
+		serviceA2.On("Start").Return(nil).Once().Run(func(mock.Arguments) { eventually.ItHappened() })
 		jobSpecIDA, err := spawner.CreateJob(context.Background(), *jobSpecA, null.String{})
 		require.NoError(t, err)
 		delegateA.jobID = jobSpecIDA
@@ -200,6 +202,7 @@ func TestSpawner_CreateJobDeleteJob(t *testing.T) {
 
 		mock.AssertExpectationsForObjects(t, serviceA1, serviceA2)
 	})
+
 
 	clearDB(t, db)
 

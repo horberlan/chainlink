@@ -2,11 +2,12 @@ package job_test
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/jackc/pgtype"
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 
 	"github.com/smartcontractkit/chainlink/core/services/eth"
 	"github.com/smartcontractkit/chainlink/core/store/models"
@@ -202,7 +203,6 @@ func TestSpawner_CreateJobDeleteJob(t *testing.T) {
 
 		mock.AssertExpectationsForObjects(t, serviceA1, serviceA2)
 	})
-
 
 	clearDB(t, db)
 

@@ -41,6 +41,7 @@ func (ds dataSource) Observe(ctx context.Context) (ocrtypes.Observation, error) 
 	end := time.Now()
 
 	var run pipeline.Run
+	run.PipelineSpecID = ds.spec.ID
 	run.CreatedAt = start
 	run.FinishedAt = &end
 

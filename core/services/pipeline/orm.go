@@ -378,10 +378,10 @@ func (o *orm) InsertFinishedRunWithResults(ctx context.Context, run Run, trrs []
 		VALUES %s
 		`
 		valueStrings := []string{}
-		valueArgs := []interface{}{runID}
+		valueArgs := []interface{}{}
 		for _, trr := range trrs {
 			valueStrings = append(valueStrings, "(?,?,?,?,?,?,?,?)")
-			valueArgs = append(valueArgs, run.ID, trr.Task.Type(), trr.Task.OutputIndex(), trr.Result.OutputDB(), trr.Result.ErrorDB(), trr.TaskRun.CreatedAt, trr.TaskRun.FinishedAt)
+			valueArgs = append(valueArgs, run.ID, trr.Task.Type(), trr.Task.OutputIndex(), trr.Result.OutputDB(), trr.Result.ErrorDB(), trr.TaskRun.DotID, trr.TaskRun.CreatedAt, trr.TaskRun.FinishedAt)
 		}
 
 		/* #nosec G201 */

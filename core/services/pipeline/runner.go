@@ -282,7 +282,6 @@ func (r *runner) executeRun(ctx context.Context, txdb *gorm.DB, spec Spec, l log
 	if err != nil {
 		return nil, err
 	}
-	startedAt := time.Now()
 	all := make(map[string]*memoryTaskRun)
 	var graph []*memoryTaskRun
 	for _, task := range tasks {
@@ -298,10 +297,9 @@ func (r *runner) executeRun(ctx context.Context, txdb *gorm.DB, spec Spec, l log
 			nPredecessors: task.NPreds(),
 			task:          task,
 			taskRun: TaskRun{
-				Type:      task.Type(),
-				CreatedAt: startedAt,
-				Index:     task.OutputIndex(),
-				DotID:     task.GetDotID(),
+				Type:  task.Type(),
+				Index: task.OutputIndex(),
+				DotID: task.GetDotID(),
 			},
 		}
 		if mtr.nPredecessors == 0 {
@@ -356,6 +354,8 @@ func (r *runner) executeRun(ctx context.Context, txdb *gorm.DB, spec Spec, l log
 
 				finishedAt := time.Now()
 
+				m.taskRun.CreatedAt = startTaskRun
+				m.taskRun.FinishedAt = &finishedAt
 				trr := TaskRunResult{
 					//ID:         m.taskRun.ID,
 					//TaskSpecID: m.taskRun.PipelineTaskSpec.ID,
@@ -448,6 +448,7 @@ func (r *runner) executeTaskRun(ctx context.Context, txdb *gorm.DB, spec Spec, t
 // It executes a run in memory then inserts the finished run/task run records, returning the final result
 func (r *runner) ExecuteAndInsertNewRun(ctx context.Context, spec Spec, l logger.Logger) (runID int64, result FinalResult, err error) {
 	var run Run
+	run.PipelineSpecID = spec.ID
 	run.CreatedAt = time.Now()
 	trrs, err := r.ExecuteRun(ctx, spec, l)
 	if err != nil {

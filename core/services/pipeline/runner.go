@@ -357,8 +357,6 @@ func (r *runner) executeRun(ctx context.Context, txdb *gorm.DB, spec Spec, l log
 				m.taskRun.CreatedAt = startTaskRun
 				m.taskRun.FinishedAt = &finishedAt
 				trr := TaskRunResult{
-					//ID:         m.taskRun.ID,
-					//TaskSpecID: m.taskRun.PipelineTaskSpec.ID,
 					TaskRun:    m.taskRun,
 					Task:       m.task,
 					Result:     result,

@@ -142,7 +142,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("must delete job before deleting bridge", func(t *testing.T) {
-		_, bridge := cltest.NewBridgeType(t, "testbridge", "blah")
+		_, bridge := cltest.NewBridgeType(t, "testbridge", "http://blah.com")
 		require.NoError(t, db.Create(bridge).Error)
 		dbSpec := makeOCRJobSpecFromToml(t, db, `
 			type               = "offchainreporting"
@@ -153,13 +153,15 @@ func TestRunner(t *testing.T) {
 		`)
 		require.NoError(t, jobORM.CreateJob(context.Background(), dbSpec, dbSpec.Pipeline))
 		// Should not be able to delete a bridge in use.
-		require.EqualError(t,
-			db.Delete(&bridge).Error,
-			"ERROR: update or delete on table \"bridge_types\" violates foreign key constraint \"fk_pipeline_task_specs_bridge_name\" on table \"pipeline_task_specs\" (SQLSTATE 23503)")
+		jids, err := jobORM.FindJobIDsWithBridge(bridge.Name.String())
+		require.NoError(t, err)
+		require.Equal(t, 1, len(jids))
 
 		// But if we delete the job, then we can.
 		require.NoError(t, jobORM.DeleteJob(context.Background(), dbSpec.ID))
-		require.NoError(t, db.Delete(&bridge).Error)
+		jids, err = jobORM.FindJobIDsWithBridge(bridge.Name.String())
+		require.NoError(t, err)
+		require.Equal(t, 0, len(jids))
 	})
 
 	t.Run("referencing a non-existent bridge should error", func(t *testing.T) {

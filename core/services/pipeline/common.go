@@ -34,7 +34,6 @@ type (
 		TaskTimeout() (time.Duration, bool)
 		SetDefaults(inputValues map[string]string, g TaskDAG, self taskDAGNode) error
 		NPreds() int
-		AddPreds(int)
 	}
 
 	Config interface {
@@ -196,10 +195,6 @@ type BaseTask struct {
 
 func (t BaseTask) NPreds() int {
 	return t.nPreds
-}
-
-func (t *BaseTask) AddPreds(i int) {
-	t.nPreds += i
 }
 
 func (t BaseTask) GetDotID() string {

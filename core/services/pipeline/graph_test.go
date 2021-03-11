@@ -126,38 +126,38 @@ func TestGraph_TasksInDependencyOrder(t *testing.T) {
 	require.NoError(t, err)
 
 	answer1 := &MedianTask{
-		BaseTask:      NewBaseTask("answer1", nil, 0),
+		BaseTask:      NewBaseTask("answer1", nil, 0, 2),
 		AllowedFaults: 1,
 	}
 	answer2 := &BridgeTask{
 		Name:     "election_winner",
-		BaseTask: NewBaseTask("answer2", nil, 1),
+		BaseTask: NewBaseTask("answer2", nil, 1, 0),
 	}
 	ds1_multiply := &MultiplyTask{
 		Times:    decimal.NewFromFloat(1.23),
-		BaseTask: NewBaseTask("ds1_multiply", answer1, 0),
+		BaseTask: NewBaseTask("ds1_multiply", answer1, 0, 1),
 	}
 	ds1_parse := &JSONParseTask{
 		Path:     []string{"one", "two"},
-		BaseTask: NewBaseTask("ds1_parse", ds1_multiply, 0),
+		BaseTask: NewBaseTask("ds1_parse", ds1_multiply, 0, 1),
 	}
 	ds1 := &BridgeTask{
 		Name:     "voter_turnout",
-		BaseTask: NewBaseTask("ds1", ds1_parse, 0),
+		BaseTask: NewBaseTask("ds1", ds1_parse, 0, 0),
 	}
 	ds2_multiply := &MultiplyTask{
 		Times:    decimal.NewFromFloat(4.56),
-		BaseTask: NewBaseTask("ds2_multiply", answer1, 0),
+		BaseTask: NewBaseTask("ds2_multiply", answer1, 0, 1),
 	}
 	ds2_parse := &JSONParseTask{
 		Path:     []string{"three", "four"},
-		BaseTask: NewBaseTask("ds2_parse", ds2_multiply, 0),
+		BaseTask: NewBaseTask("ds2_parse", ds2_multiply, 0, 1),
 	}
 	ds2 := &HTTPTask{
 		URL:         models.WebURL(*u),
 		Method:      "GET",
 		RequestData: HttpRequestData{"hi": "hello"},
-		BaseTask:    NewBaseTask("ds2", ds2_parse, 0),
+		BaseTask:    NewBaseTask("ds2", ds2_parse, 0, 0),
 	}
 
 	tasks, err := g.TasksInDependencyOrder()
@@ -195,24 +195,3 @@ func TestGraph_HasCycles(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, g.HasCycles())
 }
-
-//func TestGraph_NoPreds(t *testing.T) {
-//	d := TaskDAG{}
-//	d.UnmarshalText([]byte(`
-//		a [type=bridge];
-//		b [type=multiply times=1.23];
-//		c [type=bridge];
-//		d [type=multiply times=1.23];
-//		e [type=http url="http://blah.com"];
-//		f [type=median]
-//		a->b->f;
-//		c->d->f;
-//		e->f;
-//	`))
-//	np, err := d.TasksWithNoPreds()
-//	require.NoError(t, err)
-//	assert.Equal(t, np[0].GetDotID(), "c")
-//	require.NoError(t, err)
-//	assert.Equal(t, np[1].GetDotID(), "e")
-//	assert.Equal(t, np[2].GetDotID(), "a")
-//}

@@ -5,9 +5,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/smartcontractkit/chainlink/core/store/models"
 
-	"github.com/pkg/errors"
 	"gopkg.in/guregu/null.v4"
 )
 
@@ -16,14 +17,13 @@ type Spec struct {
 	DotDagSource    string          `json:"dotDagSource"`
 	CreatedAt       time.Time       `json:"-"`
 	MaxTaskDuration models.Interval `json:"-"`
-	//PipelineTaskSpecs []TaskSpec      `json:"-" gorm:"foreignkey:PipelineSpecID;->"`
 }
 
 func (Spec) TableName() string {
 	return "pipeline_specs"
 }
 
-// DEPRECATED
+// DEPRECATED here just for the emigration test.
 type TaskSpec struct {
 	ID             int32             `json:"-" gorm:"primary_key"`
 	DotID          string            `json:"dotId"`
@@ -40,6 +40,10 @@ type TaskSpec struct {
 
 func (TaskSpec) TableName() string {
 	return "pipeline_task_specs"
+}
+
+func (s TaskSpec) IsFinalPipelineOutput() bool {
+	return s.SuccessorID.IsZero()
 }
 
 type Run struct {
@@ -80,6 +84,17 @@ func (r Run) FinalErrors() (f FinalErrors) {
 	return f
 }
 
+// Status determines the status of the run.
+func (r *Run) Status() RunStatus {
+	if r.HasErrors() {
+		return RunStatusErrored
+	} else if r.FinishedAt != nil {
+		return RunStatusCompleted
+	}
+
+	return RunStatusInProgress
+}
+
 type TaskRun struct {
 	ID            int64             `json:"-" gorm:"primary_key"`
 	Type          TaskType          `json:"type"`
@@ -90,9 +105,7 @@ type TaskRun struct {
 	CreatedAt     time.Time         `json:"createdAt"`
 	FinishedAt    *time.Time        `json:"finishedAt"`
 	Index         int32
-
-	// New
-	DotID string
+	DotID         string
 
 	// Deprecated
 	//PipelineTaskSpecID int32             `json:"-"`
@@ -101,6 +114,33 @@ type TaskRun struct {
 
 func (TaskRun) TableName() string {
 	return "pipeline_task_runs"
+}
+
+func (tr TaskRun) GetID() string {
+	return fmt.Sprintf("%v", tr.ID)
+}
+
+func (tr *TaskRun) SetID(value string) error {
+	ID, err := strconv.ParseInt(value, 10, 32)
+	if err != nil {
+		return err
+	}
+	tr.ID = int64(ID)
+	return nil
+}
+
+func (tr TaskRun) GetDotID() string {
+	return tr.DotID
+}
+
+func (tr TaskRun) Result() Result {
+	var result Result
+	if !tr.Error.IsZero() {
+		result.Error = errors.New(tr.Error.ValueOrZero())
+	} else if tr.Output != nil && tr.Output.Val != nil {
+		result.Value = tr.Output.Val
+	}
+	return result
 }
 
 // RunStatus represents the status of a run
@@ -130,47 +170,4 @@ func (s RunStatus) Errored() bool {
 // Finished returns true if the status is final and can't be changed.
 func (s RunStatus) Finished() bool {
 	return s.Completed() || s.Errored()
-}
-
-// Status determines the status of the run.
-func (r *Run) Status() RunStatus {
-	if r.HasErrors() {
-		return RunStatusErrored
-	} else if r.FinishedAt != nil {
-		return RunStatusCompleted
-	}
-
-	return RunStatusInProgress
-}
-
-func (tr TaskRun) GetID() string {
-	return fmt.Sprintf("%v", tr.ID)
-}
-
-func (tr *TaskRun) SetID(value string) error {
-	ID, err := strconv.ParseInt(value, 10, 32)
-	if err != nil {
-		return err
-	}
-	tr.ID = int64(ID)
-	return nil
-}
-
-//func (s TaskSpec) IsFinalPipelineOutput() bool {
-//	return s.SuccessorID.IsZero()
-//}
-
-func (tr TaskRun) GetDotID() string {
-	//return tr.PipelineTaskSpec.GetDotID
-	return tr.DotID
-}
-
-func (tr TaskRun) Result() Result {
-	var result Result
-	if !tr.Error.IsZero() {
-		result.Error = errors.New(tr.Error.ValueOrZero())
-	} else if tr.Output != nil && tr.Output.Val != nil {
-		result.Value = tr.Output.Val
-	}
-	return result
 }

@@ -28,11 +28,6 @@ var _ ocrtypes.DataSource = (*dataSource)(nil)
 // Upon context cancellation, its expected that we return any usable values within ObservationGracePeriod.
 func (ds dataSource) Observe(ctx context.Context) (ocrtypes.Observation, error) {
 	var observation ocrtypes.Observation
-	//run, err := pipeline.NewRun(ds.spec, start)
-	//if err != nil {
-	//	return observation, errors.Wrapf(err, "error creating new run for spec ID %v", ds.spec.ID)
-	//}
-
 	start := time.Now()
 	trrs, err := ds.pipelineRunner.ExecuteRun(ctx, ds.spec, ds.ocrLogger)
 	if err != nil {

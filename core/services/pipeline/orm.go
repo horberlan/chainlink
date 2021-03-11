@@ -75,8 +75,6 @@ func NewORM(db *gorm.DB, config Config, eventBroadcaster postgres.EventBroadcast
 
 // The tx argument must be an already started transaction.
 func (o *orm) CreateSpec(ctx context.Context, tx *gorm.DB, taskDAG TaskDAG, maxTaskDuration models.Interval) (int32, error) {
-	//var specID int32
-	// TODO bridge name defense
 	spec := Spec{
 		DotDagSource:    taskDAG.DOTSource,
 		MaxTaskDuration: maxTaskDuration,
@@ -85,65 +83,6 @@ func (o *orm) CreateSpec(ctx context.Context, tx *gorm.DB, taskDAG TaskDAG, maxT
 	if err != nil {
 		return 0, err
 	}
-
-	/*
-		specID = spec.ID
-
-		// Create the pipeline task specs in dependency order so
-		// that we know what the successor ID for each task is
-		tasks, err := taskDAG.TasksInDependencyOrder()
-		if err != nil {
-			return specID, err
-		}
-
-		// Create the final result task that collects the answers from the pipeline's
-		// outputs.  This is a Postgres-related performance optimization.
-		resultTask := ResultTask{BaseTask{dotID: ResultTaskDotID}}
-		for _, task := range tasks {
-			if task.GetDotID() == ResultTaskDotID {
-				return specID, errors.Errorf("%v is a reserved keyword and cannot be used in job specs", ResultTaskDotID)
-			}
-			if task.OutputTask() == nil {
-				task.SetOutputTask(&resultTask)
-			}
-		}
-		tasks = append([]Task{&resultTask}, tasks...)
-
-		taskSpecIDs := make(map[Task]int32)
-		for _, task := range tasks {
-			var successorID null.Int
-			if task.OutputTask() != nil {
-				successor := task.OutputTask()
-				successorID = null.IntFrom(int64(taskSpecIDs[successor]))
-			}
-
-			taskSpec := TaskSpec{
-				DotID:          task.GetDotID(),
-				PipelineSpecID: spec.ID,
-				Type:           task.Type(),
-				JSON:           JSONSerializable{task, false},
-				Index:          task.OutputIndex(),
-				SuccessorID:    successorID,
-			}
-			if task.Type() == TaskTypeBridge {
-				btName := task.(*BridgeTask).Name
-				taskSpec.BridgeName = &btName
-			}
-			err = tx.Create(&taskSpec).Error
-			if err != nil {
-				pqErr, ok := err.(*pgconn.PgError)
-				if ok && pqErr.Code == "23503" {
-					if pqErr.ConstraintName == "fk_pipeline_task_specs_bridge_name" {
-						return specID, errors.Wrap(ErrNoSuchBridge, *taskSpec.BridgeName)
-					}
-				}
-				return specID, err
-			}
-
-			taskSpecIDs[task] = taskSpec.ID
-		}
-
-	*/
 	return spec.ID, errors.WithStack(err)
 }
 
@@ -193,17 +132,6 @@ func (o *orm) CreateRun(ctx context.Context, jobID int32, meta map[string]interf
 		}
 		runID = run.ID
 		return tx.Create(&trs).Error
-		//runID = run.ID
-
-		// Create the task runs
-		//err = tx.Exec(`
-		//    INSERT INTO pipeline_task_runs (
-		//    	pipeline_run_id, dot_id, type, index, created_at
-		//    )
-		//    SELECT ? AS pipeline_run_id, id AS pipeline_task_spec_id, type, index, NOW() AS created_at
-		//    FROM pipeline_task_specs
-		//    WHERE pipeline_spec_id = ?`, run.ID, run.PipelineSpecID).Error
-		//return errors.Wrap(err, "could not create pipeline task runs")
 	})
 	return runID, errors.WithStack(err)
 }
@@ -367,13 +295,6 @@ func (o *orm) InsertFinishedRunWithResults(ctx context.Context, run Run, trrs []
 		}
 
 		runID = run.ID
-
-		//sql := `
-		//INSERT INTO pipeline_task_runs (pipeline_run_id, type, index, output, error, pipeline_task_spec_id, created_at, finished_at)
-		//SELECT ?, pts.type, pts.index, ptruns.output, ptruns.error, pts.id, ptruns.created_at, ptruns.finished_at
-		//FROM (VALUES %s) ptruns (pipeline_task_spec_id, output, error, created_at, finished_at)
-		//JOIN pipeline_task_specs pts ON pts.id = ptruns.pipeline_task_spec_id
-		//`
 		sql := `
 		INSERT INTO pipeline_task_runs (pipeline_run_id, type, index, output, error, dot_id, created_at, finished_at)
 		VALUES %s

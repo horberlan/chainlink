@@ -16,14 +16,14 @@ type Spec struct {
 	DotDagSource      string          `json:"dotDagSource"`
 	CreatedAt         time.Time       `json:"-"`
 	MaxTaskDuration   models.Interval `json:"-"`
-	PipelineTaskSpecs []TaskSpec      `json:"-" gorm:"foreignkey:PipelineSpecID;->"`
+	//PipelineTaskSpecs []TaskSpec      `json:"-" gorm:"foreignkey:PipelineSpecID;->"`
 }
 
 func (Spec) TableName() string     {
 	return "pipeline_specs"
 }
 
-
+// DEPRECATED
 type TaskSpec struct {
 		ID             int32             `json:"-" gorm:"primary_key"`
 		DotID          string            `json:"dotId"`
@@ -41,6 +41,7 @@ type TaskSpec struct {
 func (TaskSpec) TableName() string {
 	return "pipeline_task_specs"
 }
+
 
 
 type Run struct {
@@ -96,8 +97,8 @@ type TaskRun struct {
 	DotID 			   string
 
 	// Deprecated
-	PipelineTaskSpecID int32             `json:"-"`
-	PipelineTaskSpec   TaskSpec          `json:"taskSpec" gorm:"foreignkey:PipelineTaskSpecID;->"`
+	//PipelineTaskSpecID int32             `json:"-"`
+	//PipelineTaskSpec   TaskSpec          `json:"taskSpec" gorm:"foreignkey:PipelineTaskSpecID;->"`
 }
 
 func (TaskRun) TableName() string  {
@@ -117,9 +118,9 @@ func (tr *TaskRun) SetID(value string) error {
 	return nil
 }
 
-func (s TaskSpec) IsFinalPipelineOutput() bool {
-	return s.SuccessorID.IsZero()
-}
+//func (s TaskSpec) IsFinalPipelineOutput() bool {
+//	return s.SuccessorID.IsZero()
+//}
 
 func (tr TaskRun) GetDotID() string {
 	//return tr.PipelineTaskSpec.GetDotID

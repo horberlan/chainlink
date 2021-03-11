@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgconn"
-
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -16,7 +14,6 @@ import (
 	"github.com/smartcontractkit/chainlink/core/services/postgres"
 	"github.com/smartcontractkit/chainlink/core/store/models"
 	"github.com/smartcontractkit/chainlink/core/utils"
-	"gopkg.in/guregu/null.v4"
 	"gorm.io/gorm"
 )
 
@@ -77,15 +74,18 @@ func NewORM(db *gorm.DB, config Config, eventBroadcaster postgres.EventBroadcast
 
 // The tx argument must be an already started transaction.
 func (o *orm) CreateSpec(ctx context.Context, tx *gorm.DB, taskDAG TaskDAG, maxTaskDuration models.Interval) (int32, error) {
-	var specID int32
+	//var specID int32
+	// TODO bridge name defense
 	spec := Spec{
 		DotDagSource:    taskDAG.DOTSource,
 		MaxTaskDuration: maxTaskDuration,
 	}
 	err := tx.Create(&spec).Error
 	if err != nil {
-		return specID, err
+		return 0, err
 	}
+
+	/*
 	specID = spec.ID
 
 	// Create the pipeline task specs in dependency order so
@@ -141,7 +141,9 @@ func (o *orm) CreateSpec(ctx context.Context, tx *gorm.DB, taskDAG TaskDAG, maxT
 
 		taskSpecIDs[task] = taskSpec.ID
 	}
-	return specID, errors.WithStack(err)
+
+	 */
+	return spec.ID, errors.WithStack(err)
 }
 
 // CreateRun adds a Run record to the DB, and one TaskRun
@@ -172,7 +174,7 @@ func (o *orm) CreateRun(ctx context.Context, jobID int32, meta map[string]interf
 		// Create the task runs
 		err = tx.Exec(`
             INSERT INTO pipeline_task_runs (
-            	pipeline_run_id, pipeline_task_spec_id, type, index, created_at
+            	pipeline_run_id, dot_id, type, index, created_at
             )
             SELECT ? AS pipeline_run_id, id AS pipeline_task_spec_id, type, index, NOW() AS created_at
             FROM pipeline_task_specs
@@ -478,12 +480,17 @@ func (o *orm) RunFinished(runID int64) (bool, error) {
 	// TODO: Since we denormalised this can be made more efficient
 	// https://www.pivotaltracker.com/story/show/176557536
 	var tr TaskRun
+	//err := o.db.Raw(`
+    //    SELECT *
+    //    FROM pipeline_task_runs
+    //    INNER JOIN pipeline_task_specs ON pipeline_task_runs.pipeline_task_spec_id = pipeline_task_specs.id
+    //    WHERE pipeline_task_runs.pipeline_run_id = ? AND pipeline_task_specs.successor_id IS NULL
+	//	LIMIT 1
+    //`, runID).Scan(&tr).Error
 	err := o.db.Raw(`
         SELECT * 
         FROM pipeline_task_runs
-        INNER JOIN pipeline_task_specs ON pipeline_task_runs.pipeline_task_spec_id = pipeline_task_specs.id
-        WHERE pipeline_task_runs.pipeline_run_id = ? AND pipeline_task_specs.successor_id IS NULL
-		LIMIT 1
+        WHERE id = ? AND finished_at IS NOT NULL
     `, runID).Scan(&tr).Error
 	if err != nil {
 		return false, errors.Wrapf(err, "could not determine if run is finished (run ID: %v)", runID)

@@ -77,6 +77,7 @@ func TestPipelineORM_Integration(t *testing.T) {
 		BaseTask:    pipeline.NewBaseTask("ds2", ds2_parse, 0),
 	}
 	expectedTasks := []pipeline.Task{result, answer1, answer2, ds1_multiply, ds1_parse, ds1, ds2_multiply, ds2_parse, ds2}
+	/*
 	var expectedTaskSpecs []pipeline.TaskSpec
 	for _, task := range expectedTasks {
 		expectedTaskSpecs = append(expectedTaskSpecs, pipeline.TaskSpec{
@@ -87,6 +88,7 @@ func TestPipelineORM_Integration(t *testing.T) {
 			Index:          task.OutputIndex(),
 		})
 	}
+	 */
 
 	_, bridge := cltest.NewBridgeType(t, "voter_turnout", "blah")
 	require.NoError(t, db.Create(bridge).Error)
@@ -111,32 +113,32 @@ func TestPipelineORM_Integration(t *testing.T) {
 		require.Equal(t, specID, specs[0].ID)
 		require.Equal(t, pipeline.DotStr, specs[0].DotDagSource)
 
-		var taskSpecs []pipeline.TaskSpec
-		err = db.Find(&taskSpecs).Error
-		require.NoError(t, err)
-		require.Len(t, taskSpecs, len(expectedTaskSpecs))
+		//var taskSpecs []pipeline.TaskSpec
+		//err = db.Find(&taskSpecs).Error
+		//require.NoError(t, err)
+		//require.Len(t, taskSpecs, len(expectedTaskSpecs))
 
-		type equalser interface {
-			ExportedEquals(otherTask pipeline.Task) bool
-		}
+		//type equalser interface {
+		//	ExportedEquals(otherTask pipeline.Task) bool
+		//}
 
-		for _, taskSpec := range taskSpecs {
-			taskSpec.JSON.Val.(map[string]interface{})["index"] = taskSpec.Index
-			taskSpec.JSON.Val, err = pipeline.UnmarshalTaskFromMap(taskSpec.Type, taskSpec.JSON.Val, taskSpec.DotID, nil, nil, nil)
-			require.NoError(t, err)
-
-			var found bool
-			for _, expected := range expectedTaskSpecs {
-				if taskSpec.PipelineSpecID == specID &&
-					taskSpec.Type == expected.Type &&
-					taskSpec.Index == expected.Index &&
-					taskSpec.JSON.Val.(equalser).ExportedEquals(expected.JSON.Val.(pipeline.Task)) {
-					found = true
-					break
-				}
-			}
-			require.True(t, found)
-		}
+		//for _, taskSpec := range taskSpecs {
+		//	taskSpec.JSON.Val.(map[string]interface{})["index"] = taskSpec.Index
+		//	taskSpec.JSON.Val, err = pipeline.UnmarshalTaskFromMap(taskSpec.Type, taskSpec.JSON.Val, taskSpec.DotID, nil, nil, nil)
+		//	require.NoError(t, err)
+		//
+		//	var found bool
+		//	for _, expected := range expectedTaskSpecs {
+		//		if taskSpec.PipelineSpecID == specID &&
+		//			taskSpec.Type == expected.Type &&
+		//			taskSpec.Index == expected.Index &&
+		//			taskSpec.JSON.Val.(equalser).ExportedEquals(expected.JSON.Val.(pipeline.Task)) {
+		//			found = true
+		//			break
+		//		}
+		//	}
+		//	require.True(t, found)
+		//}
 
 		require.NoError(t, db.Exec(`DELETE FROM pipeline_specs`).Error)
 	})
@@ -161,6 +163,7 @@ func TestPipelineORM_Integration(t *testing.T) {
 		require.Equal(t, dbSpec.PipelineSpecID, pipelineSpecs[0].ID)
 		pipelineSpecID := pipelineSpecs[0].ID
 
+		/*
 		var taskSpecs []pipeline.TaskSpec
 		err = db.Find(&taskSpecs).Error
 		require.NoError(t, err)
@@ -169,6 +172,8 @@ func TestPipelineORM_Integration(t *testing.T) {
 		for _, taskSpec := range taskSpecs {
 			taskSpecIDs = append(taskSpecIDs, taskSpec.ID)
 		}
+
+		 */
 
 		// Create the run
 		runID, err = orm.CreateRun(context.Background(), dbSpec.ID, nil)
@@ -186,11 +191,12 @@ func TestPipelineORM_Integration(t *testing.T) {
 		var taskRuns []pipeline.TaskRun
 		err = db.Where("pipeline_run_id = ?", runID).Find(&taskRuns).Error
 		require.NoError(t, err)
-		require.Len(t, taskRuns, len(taskSpecIDs))
+		//require.Len(t, taskRuns, len(taskSpecIDs))
+		require.Len(t, taskRuns, len(expectedTasks))
 
 		for _, taskRun := range taskRuns {
 			require.Equal(t, runID, taskRun.PipelineRunID)
-			require.Contains(t, taskSpecIDs, taskRun.PipelineTaskSpecID)
+			//require.Contains(t, taskSpecIDs, taskRun.PipelineTaskSpecID)
 			require.Nil(t, taskRun.Output)
 			require.True(t, taskRun.Error.IsZero())
 		}
@@ -368,9 +374,9 @@ func TestPipelineORM_Integration(t *testing.T) {
 					for _, run := range finishedTaskRuns {
 						require.True(t, run.Output != nil || !run.Error.IsZero())
 						if run.Output != nil {
-							require.Equal(t, test.answers[run.DotID()].Value, run.Output.Val)
+							require.Equal(t, test.answers[run.GetDotID()].Value, run.Output.Val)
 						} else if !run.Error.IsZero() {
-							require.Equal(t, test.answers[run.DotID()].Error.Error(), run.Error.ValueOrZero())
+							require.Equal(t, test.answers[run.GetDotID()].Error.Error(), run.Error.ValueOrZero())
 						}
 					}
 

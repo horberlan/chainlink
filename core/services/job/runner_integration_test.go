@@ -117,26 +117,26 @@ func TestRunner(t *testing.T) {
 		assert.Len(t, runs, 9)
 
 		for _, run := range runs {
-			if run.DotID() == "answer2" {
+			if run.GetDotID() == "answer2" {
 				assert.Equal(t, "Hal Finney", run.Output.Val)
-			} else if run.DotID() == "ds2" {
+			} else if run.GetDotID() == "ds2" {
 				assert.Equal(t, `{"turnout": 61.942}`, run.Output.Val)
-			} else if run.DotID() == "ds2_parse" {
+			} else if run.GetDotID() == "ds2_parse" {
 				assert.Equal(t, float64(61.942), run.Output.Val)
-			} else if run.DotID() == "ds2_multiply" {
+			} else if run.GetDotID() == "ds2_multiply" {
 				assert.Equal(t, "6194.2", run.Output.Val)
-			} else if run.DotID() == "ds1" {
+			} else if run.GetDotID() == "ds1" {
 				assert.Equal(t, `{"data": {"result": 62.57}}`, run.Output.Val)
-			} else if run.DotID() == "ds1_parse" {
+			} else if run.GetDotID() == "ds1_parse" {
 				assert.Equal(t, float64(62.57), run.Output.Val)
-			} else if run.DotID() == "ds1_multiply" {
+			} else if run.GetDotID() == "ds1_multiply" {
 				assert.Equal(t, "6257", run.Output.Val)
-			} else if run.DotID() == "answer1" {
+			} else if run.GetDotID() == "answer1" {
 				assert.Equal(t, "6225.6", run.Output.Val)
-			} else if run.DotID() == "__result__" {
+			} else if run.GetDotID() == "__result__" {
 				assert.Equal(t, []interface{}{"6225.6", "Hal Finney"}, run.Output.Val)
 			} else {
-				t.Fatalf("unknown task '%v'", run.DotID())
+				t.Fatalf("unknown task '%v'", run.GetDotID())
 			}
 		}
 	})
@@ -220,22 +220,22 @@ func TestRunner(t *testing.T) {
 		require.Len(t, runs, 4)
 
 		for _, run := range runs {
-			if run.DotID() == "ds1" {
+			if run.GetDotID() == "ds1" {
 				assert.True(t, run.Error.IsZero())
 				require.NotNil(t, resp, run.Output)
 				assert.Equal(t, resp, run.Output.Val)
-			} else if run.DotID() == "ds1_parse" {
+			} else if run.GetDotID() == "ds1_parse" {
 				assert.True(t, run.Error.IsZero())
 				// FIXME: Shouldn't it be the Val that is null?
 				assert.Nil(t, run.Output)
-			} else if run.DotID() == "ds1_multiply" {
+			} else if run.GetDotID() == "ds1_multiply" {
 				assert.Equal(t, "type <nil> cannot be converted to decimal.Decimal", run.Error.ValueOrZero())
 				assert.Nil(t, run.Output)
-			} else if run.DotID() == "__result__" {
+			} else if run.GetDotID() == "__result__" {
 				assert.Equal(t, []interface{}{nil}, run.Output.Val)
 				assert.Equal(t, "[\"type \\u003cnil\\u003e cannot be converted to decimal.Decimal\"]", run.Error.ValueOrZero())
 			} else {
-				t.Fatalf("unknown task '%v'", run.DotID())
+				t.Fatalf("unknown task '%v'", run.GetDotID())
 			}
 		}
 	})
@@ -281,20 +281,20 @@ func TestRunner(t *testing.T) {
 		require.Len(t, runs, 4)
 
 		for _, run := range runs {
-			if run.DotID() == "ds1" {
+			if run.GetDotID() == "ds1" {
 				assert.True(t, run.Error.IsZero())
 				assert.Equal(t, resp, run.Output.Val)
-			} else if run.DotID() == "ds1_parse" {
+			} else if run.GetDotID() == "ds1_parse" {
 				assert.Equal(t, "could not resolve path [\"USD\"] in {\"Response\":\"Error\",\"Message\":\"You are over your rate limit please upgrade your account!\",\"HasWarning\":false,\"Type\":99,\"RateLimit\":{\"calls_made\":{\"second\":5,\"minute\":5,\"hour\":955,\"day\":10004,\"month\":15146,\"total_calls\":15152},\"max_calls\":{\"second\":20,\"minute\":300,\"hour\":3000,\"day\":10000,\"month\":75000}},\"Data\":{}}", run.Error.ValueOrZero())
 				assert.Nil(t, run.Output)
-			} else if run.DotID() == "ds1_multiply" {
+			} else if run.GetDotID() == "ds1_multiply" {
 				assert.Equal(t, "could not resolve path [\"USD\"] in {\"Response\":\"Error\",\"Message\":\"You are over your rate limit please upgrade your account!\",\"HasWarning\":false,\"Type\":99,\"RateLimit\":{\"calls_made\":{\"second\":5,\"minute\":5,\"hour\":955,\"day\":10004,\"month\":15146,\"total_calls\":15152},\"max_calls\":{\"second\":20,\"minute\":300,\"hour\":3000,\"day\":10000,\"month\":75000}},\"Data\":{}}", run.Error.ValueOrZero())
 				assert.Nil(t, run.Output)
-			} else if run.DotID() == "__result__" {
+			} else if run.GetDotID() == "__result__" {
 				assert.Equal(t, []interface{}{nil}, run.Output.Val)
 				assert.Equal(t, "[\"could not resolve path [\\\"USD\\\"] in {\\\"Response\\\":\\\"Error\\\",\\\"Message\\\":\\\"You are over your rate limit please upgrade your account!\\\",\\\"HasWarning\\\":false,\\\"Type\\\":99,\\\"RateLimit\\\":{\\\"calls_made\\\":{\\\"second\\\":5,\\\"minute\\\":5,\\\"hour\\\":955,\\\"day\\\":10004,\\\"month\\\":15146,\\\"total_calls\\\":15152},\\\"max_calls\\\":{\\\"second\\\":20,\\\"minute\\\":300,\\\"hour\\\":3000,\\\"day\\\":10000,\\\"month\\\":75000}},\\\"Data\\\":{}}\"]", run.Error.ValueOrZero())
 			} else {
-				t.Fatalf("unknown task '%v'", run.DotID())
+				t.Fatalf("unknown task '%v'", run.GetDotID())
 			}
 		}
 	})
@@ -340,20 +340,20 @@ func TestRunner(t *testing.T) {
 		require.Len(t, runs, 4)
 
 		for _, run := range runs {
-			if run.DotID() == "ds1" {
+			if run.GetDotID() == "ds1" {
 				assert.True(t, run.Error.IsZero())
 				assert.Equal(t, resp, run.Output.Val)
-			} else if run.DotID() == "ds1_parse" {
+			} else if run.GetDotID() == "ds1_parse" {
 				assert.True(t, run.Error.IsZero())
 				assert.Nil(t, run.Output)
-			} else if run.DotID() == "ds1_multiply" {
+			} else if run.GetDotID() == "ds1_multiply" {
 				assert.Equal(t, "type <nil> cannot be converted to decimal.Decimal", run.Error.ValueOrZero())
 				assert.Nil(t, run.Output)
-			} else if run.DotID() == "__result__" {
+			} else if run.GetDotID() == "__result__" {
 				assert.Equal(t, []interface{}{nil}, run.Output.Val)
 				assert.Equal(t, "[\"type \\u003cnil\\u003e cannot be converted to decimal.Decimal\"]", run.Error.ValueOrZero())
 			} else {
-				t.Fatalf("unknown task '%v'", run.DotID())
+				t.Fatalf("unknown task '%v'", run.GetDotID())
 			}
 		}
 	})

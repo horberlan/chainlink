@@ -164,7 +164,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("referencing a non-existent bridge should error", func(t *testing.T) {
-		_, bridge := cltest.NewBridgeType(t, "testbridge", "http://blah.com")
+		_, bridge := cltest.NewBridgeType(t, "testbridge2", "http://blah.com")
 		require.NoError(t, db.Create(bridge).Error)
 		dbSpec := makeOCRJobSpecFromToml(t, db, `
 			type               = "offchainreporting"

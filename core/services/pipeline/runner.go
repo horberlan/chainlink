@@ -151,37 +151,6 @@ func (r *runner) runLoop() {
 	}
 }
 
-// NewRun creates an in-memory Run along with its TaskRuns for the provided job
-// It does not interact with the database
-func NewRun(spec Spec, startedAt time.Time) (run Run, err error) {
-	d := TaskDAG{}
-	err = d.UnmarshalText([]byte(spec.DotDagSource))
-	if err != nil {
-		return run, err
-	}
-	tasks, err := d.TasksInDependencyOrder()
-	if err != nil {
-		return run, err
-	}
-	taskRuns := make([]TaskRun, len(tasks))
-	for i, task := range tasks {
-		taskRuns[i] = TaskRun{
-			Type: task.Type(),
-			//PipelineTaskSpecID: taskSpec.ID,
-			//PipelineTaskSpec:   taskSpec,
-			CreatedAt: startedAt,
-		}
-	}
-	run = Run{
-		PipelineSpecID:   spec.ID,
-		PipelineSpec:     spec,
-		PipelineTaskRuns: taskRuns,
-		CreatedAt:        startedAt,
-	}
-
-	return run, nil
-}
-
 func (r *runner) CreateRun(ctx context.Context, jobID int32, meta map[string]interface{}) (int64, error) {
 	runID, err := r.orm.CreateRun(ctx, jobID, meta)
 	if err != nil {
@@ -350,7 +319,7 @@ func (r *runner) executeRun(ctx context.Context, txdb *gorm.DB, spec Spec, l log
 
 				startTaskRun := time.Now()
 
-				result := r.executeTaskRun(ctx, txdb, spec, m.task, m.taskRun, m.results(), &txdbMutex, l)
+				result := r.executeTaskRun(ctx, spec, m.task, m.taskRun, m.results(), l)
 
 				finishedAt := time.Now()
 
@@ -401,13 +370,11 @@ func (r *runner) executeRun(ctx context.Context, txdb *gorm.DB, spec Spec, l log
 	return trrs, err
 }
 
-func (r *runner) executeTaskRun(ctx context.Context, txdb *gorm.DB, spec Spec, task Task, taskRun TaskRun, inputs []Result, txdbMutex *sync.Mutex, l logger.Logger) Result {
+func (r *runner) executeTaskRun(ctx context.Context, spec Spec, task Task, taskRun TaskRun, inputs []Result, l logger.Logger) Result {
 	loggerFields := []interface{}{
 		"taskName", taskRun.DotID,
-		//"taskID", taskRun.PipelineTaskSpecID,
 		"runID", taskRun.PipelineRunID,
 		"taskRunID", taskRun.ID,
-		//"specID", taskRun.PipelineTaskSpec.PipelineSpecID,
 	}
 
 	// Order of precedence for task timeout:

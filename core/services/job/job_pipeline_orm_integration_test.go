@@ -77,9 +77,9 @@ func TestPipelineORM_Integration(t *testing.T) {
 		BaseTask:    pipeline.NewBaseTask("ds2", ds2_parse, 0, 0),
 	}
 	expectedTasks := []pipeline.Task{result, answer1, answer2, ds1_multiply, ds1_parse, ds1, ds2_multiply, ds2_parse, ds2}
-	_, bridge := cltest.NewBridgeType(t, "voter_turnout", "blah")
+	_, bridge := cltest.NewBridgeType(t, "voter_turnout", "http://blah.com")
 	require.NoError(t, db.Create(bridge).Error)
-	_, bridge2 := cltest.NewBridgeType(t, "election_winner", "blah")
+	_, bridge2 := cltest.NewBridgeType(t, "election_winner", "http://blah.com")
 	require.NoError(t, db.Create(bridge2).Error)
 
 	t.Run("creates task DAGs", func(t *testing.T) {

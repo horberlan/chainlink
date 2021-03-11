@@ -132,44 +132,6 @@ ds5 [type=http method="GET" url="%s" index=2]
 	require.Len(t, errorResults, 3)
 }
 
-//func dotGraphToSpec(t *testing.T, id int32, taskIDStart int32, graph string) pipeline.Spec {
-//	d := pipeline.NewTaskDAG()
-//	err := d.UnmarshalText([]byte(graph))
-//	require.NoError(t, err)
-//	ts, err := d.TasksInDependencyOrder()
-//	require.NoError(t, err)
-//	var s = pipeline.Spec{
-//		ID:                id,
-//		PipelineTaskSpecs: make([]pipeline.TaskSpec, 0),
-//	}
-//	taskSpecIDs := make(map[pipeline.Task]int32)
-//	for _, task := range ts {
-//		var successorID null.Int
-//		if task.OutputTask() != nil {
-//			successor := task.OutputTask()
-//			successorID = null.IntFrom(int64(taskSpecIDs[successor]))
-//		}
-//		v := pipeline.JSONSerializable{task, false}
-//		b, err := v.MarshalJSON()
-//		require.NoError(t, err)
-//		v2 := pipeline.JSONSerializable{}
-//		err = v2.UnmarshalJSON(b)
-//		require.NoError(t, err)
-//		s.PipelineTaskSpecs = append(s.PipelineTaskSpecs, pipeline.TaskSpec{
-//			ID:             taskIDStart,
-//			DotID:          task.GetDotID(),
-//			PipelineSpecID: s.ID,
-//			Type:           task.Type(),
-//			JSON:           v2,
-//			Index:          task.OutputIndex(),
-//			SuccessorID:    successorID,
-//		})
-//		taskSpecIDs[task] = taskIDStart
-//		taskIDStart++
-//	}
-//	return s
-//}
-
 func Test_PipelineRunner_HandleFaults(t *testing.T) {
 	// We want to test the scenario where one or multiple APIs time out,
 	// but a sufficient number of them still complete within the desired time frame
@@ -203,8 +165,6 @@ answer1 [type=median                      index=0];
 `, m1.URL, m2.URL)
 
 	r := pipeline.NewRunner(orm, store.Config)
-	//run, err := pipeline.NewRun(s, time.Now())
-	//require.NoError(t, err)
 
 	// If we cancel before an API is finished, we should still get a median.
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)

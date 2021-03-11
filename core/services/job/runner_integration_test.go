@@ -110,7 +110,6 @@ func TestRunner(t *testing.T) {
 		// Verify individual task results
 		var runs []pipeline.TaskRun
 		err = db.
-			//Preload("PipelineTaskSpec").
 			Where("pipeline_run_id = ?", runID).
 			Find(&runs).Error
 		assert.NoError(t, err)
@@ -148,7 +147,7 @@ func TestRunner(t *testing.T) {
 			type               = "offchainreporting"
 			schemaVersion      = 1
 			observationSource = """
-				ds1          [type=bridge name="testbridge" url="http://data.com"];
+				ds1          [type=bridge name="testbridge"];
 			"""
 		`)
 		require.NoError(t, jobORM.CreateJob(context.Background(), dbSpec, dbSpec.Pipeline))
@@ -165,13 +164,13 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("referencing a non-existent bridge should error", func(t *testing.T) {
-		_, bridge := cltest.NewBridgeType(t, "testbridge", "blah")
+		_, bridge := cltest.NewBridgeType(t, "testbridge", "http://blah.com")
 		require.NoError(t, db.Create(bridge).Error)
 		dbSpec := makeOCRJobSpecFromToml(t, db, `
 			type               = "offchainreporting"
 			schemaVersion      = 1
 			observationSource = """
-				ds1          [type=bridge name="testbridge2" url="http://data.com"];
+				ds1          [type=bridge name="testbridge2"];
 			"""
 		`)
 		require.Error(t,
@@ -215,7 +214,6 @@ func TestRunner(t *testing.T) {
 		// Verify individual task results
 		var runs []pipeline.TaskRun
 		err = db.
-			//Preload("PipelineTaskSpec").
 			Where("pipeline_run_id = ?", runID).
 			Find(&runs).Error
 		assert.NoError(t, err)
@@ -276,7 +274,6 @@ func TestRunner(t *testing.T) {
 		// Verify individual task results
 		var runs []pipeline.TaskRun
 		err = db.
-			//Preload("PipelineTaskSpec").
 			Where("pipeline_run_id = ?", runID).
 			Find(&runs).Error
 		assert.NoError(t, err)
@@ -335,7 +332,6 @@ func TestRunner(t *testing.T) {
 		// Verify individual task results
 		var runs []pipeline.TaskRun
 		err = db.
-			//Preload("PipelineTaskSpec").
 			Where("pipeline_run_id = ?", runID).
 			Find(&runs).Error
 		assert.NoError(t, err)

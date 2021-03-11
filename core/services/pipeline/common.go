@@ -130,7 +130,6 @@ func (result FinalResult) SingularResult() (Result, error) {
 // TaskSpecID will always be non-zero
 type TaskRunResult struct {
 	ID int64
-	//TaskSpecID int32
 	Task       Task
 	TaskRun    TaskRun
 	Result     Result

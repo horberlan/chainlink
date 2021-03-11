@@ -388,6 +388,7 @@ func (o *orm) PipelineRunsByJobID(jobID int32, offset, size int) ([]pipeline.Run
 	}
 
 	err = o.db.
+		Preload("PipelineSpec").
 		Preload("PipelineTaskRuns", func(db *gorm.DB) *gorm.DB {
 			return db.
 				Where(`pipeline_task_runs.type != 'result'`).

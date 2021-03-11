@@ -342,13 +342,14 @@ func (o *orm) PipelineRunsByJobID(jobID int32, offset, size int) ([]pipeline.Run
 
 	// TODO don't use pipeline task specs here
 	err = o.db.
-		Preload("PipelineSpec").
+		//Preload("PipelineSpec").
 		Preload("PipelineTaskRuns", func(db *gorm.DB) *gorm.DB {
 			return db.
 				Where(`pipeline_task_runs.type != 'result'`).
 				Order("created_at ASC, id ASC")
 		}).
-		Preload("PipelineTaskRuns.PipelineTaskSpec").
+		//Preload("PipelineTaskRuns.PipelineTaskSpec").
+		Preload("PipelineTaskRuns").
 		Joins("INNER JOIN jobs ON pipeline_runs.pipeline_spec_id = jobs.pipeline_spec_id").
 		Where("jobs.id = ?", jobID).
 		Limit(size).

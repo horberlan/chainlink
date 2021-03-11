@@ -12,37 +12,35 @@ import (
 )
 
 type Spec struct {
-	ID                int32           `gorm:"primary_key"`
-	DotDagSource      string          `json:"dotDagSource"`
-	CreatedAt         time.Time       `json:"-"`
-	MaxTaskDuration   models.Interval `json:"-"`
+	ID              int32           `gorm:"primary_key"`
+	DotDagSource    string          `json:"dotDagSource"`
+	CreatedAt       time.Time       `json:"-"`
+	MaxTaskDuration models.Interval `json:"-"`
 	//PipelineTaskSpecs []TaskSpec      `json:"-" gorm:"foreignkey:PipelineSpecID;->"`
 }
 
-func (Spec) TableName() string     {
+func (Spec) TableName() string {
 	return "pipeline_specs"
 }
 
 // DEPRECATED
 type TaskSpec struct {
-		ID             int32             `json:"-" gorm:"primary_key"`
-		DotID          string            `json:"dotId"`
-		PipelineSpecID int32             `json:"-"`
-		PipelineSpec   Spec              `json:"-"`
-		Type           TaskType          `json:"-"`
-		JSON           JSONSerializable  `json:"-" gorm:"type:jsonb"`
-		Index          int32             `json:"-"`
-		SuccessorID    null.Int          `json:"-"`
-		CreatedAt      time.Time         `json:"-"`
-		BridgeName     *string           `json:"-"`
-		Bridge         models.BridgeType `json:"-" gorm:"foreignKey:BridgeName;->"`
+	ID             int32             `json:"-" gorm:"primary_key"`
+	DotID          string            `json:"dotId"`
+	PipelineSpecID int32             `json:"-"`
+	PipelineSpec   Spec              `json:"-"`
+	Type           TaskType          `json:"-"`
+	JSON           JSONSerializable  `json:"-" gorm:"type:jsonb"`
+	Index          int32             `json:"-"`
+	SuccessorID    null.Int          `json:"-"`
+	CreatedAt      time.Time         `json:"-"`
+	BridgeName     *string           `json:"-"`
+	Bridge         models.BridgeType `json:"-" gorm:"foreignKey:BridgeName;->"`
 }
 
 func (TaskSpec) TableName() string {
 	return "pipeline_task_specs"
 }
-
-
 
 type Run struct {
 	ID               int64            `json:"-" gorm:"primary_key"`
@@ -56,7 +54,7 @@ type Run struct {
 	PipelineTaskRuns []TaskRun        `json:"taskRuns" gorm:"foreignkey:PipelineRunID;->"`
 }
 
-func (Run) TableName() string    {
+func (Run) TableName() string {
 	return "pipeline_runs"
 }
 
@@ -83,25 +81,25 @@ func (r Run) FinalErrors() (f FinalErrors) {
 }
 
 type TaskRun struct {
-	ID                 int64             `json:"-" gorm:"primary_key"`
-	Type               TaskType          `json:"type"`
-	PipelineRun        Run               `json:"-"`
-	PipelineRunID      int64             `json:"-"`
-	Output             *JSONSerializable `json:"output" gorm:"type:jsonb"`
-	Error              null.String       `json:"error"`
-	CreatedAt          time.Time         `json:"createdAt"`
-	FinishedAt         *time.Time        `json:"finishedAt"`
-	Index 			   int32
+	ID            int64             `json:"-" gorm:"primary_key"`
+	Type          TaskType          `json:"type"`
+	PipelineRun   Run               `json:"-"`
+	PipelineRunID int64             `json:"-"`
+	Output        *JSONSerializable `json:"output" gorm:"type:jsonb"`
+	Error         null.String       `json:"error"`
+	CreatedAt     time.Time         `json:"createdAt"`
+	FinishedAt    *time.Time        `json:"finishedAt"`
+	Index         int32
 
 	// New
-	DotID 			   string
+	DotID string
 
 	// Deprecated
 	//PipelineTaskSpecID int32             `json:"-"`
 	//PipelineTaskSpec   TaskSpec          `json:"taskSpec" gorm:"foreignkey:PipelineTaskSpecID;->"`
 }
 
-func (TaskRun) TableName() string  {
+func (TaskRun) TableName() string {
 	return "pipeline_task_runs"
 }
 

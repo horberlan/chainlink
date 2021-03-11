@@ -3,12 +3,13 @@ package pipeline_test
 import (
 	"context"
 	"fmt"
-	"github.com/smartcontractkit/chainlink/core/logger"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 	"time"
+
+	"github.com/smartcontractkit/chainlink/core/logger"
 
 	"github.com/shopspring/decimal"
 	"github.com/smartcontractkit/chainlink/core/internal/cltest"
@@ -52,7 +53,6 @@ func Test_PipelineRunner_ExecuteTaskRuns(t *testing.T) {
 	orm.On("DB").Return(store.DB)
 
 	r := pipeline.NewRunner(orm, store.Config)
-
 
 	d := pipeline.TaskDAG{}
 	s := fmt.Sprintf(`
@@ -169,7 +169,6 @@ ds5 [type=http method="GET" url="%s" index=2]
 //	}
 //	return s
 //}
-
 
 func Test_PipelineRunner_HandleFaults(t *testing.T) {
 	// We want to test the scenario where one or multiple APIs time out,

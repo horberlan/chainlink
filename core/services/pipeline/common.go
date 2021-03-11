@@ -130,8 +130,10 @@ func (result FinalResult) SingularResult() (Result, error) {
 // ID might be zero if the TaskRun has not been inserted yet
 // TaskSpecID will always be non-zero
 type TaskRunResult struct {
-	ID         int64
-	TaskSpecID int32
+	ID int64
+	//TaskSpecID int32
+	Task       Task
+	TaskRun    TaskRun
 	Result     Result
 	FinishedAt time.Time
 	IsTerminal bool
@@ -187,7 +189,7 @@ type RunWithResults struct {
 type BaseTask struct {
 	outputTask Task
 	dotID      string        `mapstructure:"-"`
-	nPreds     int `mapstructure:"-"`
+	nPreds     int           `mapstructure:"-"`
 	Index      int32         `mapstructure:"index" json:"-" `
 	Timeout    time.Duration `mapstructure:"timeout"`
 }
@@ -197,10 +199,10 @@ func (t BaseTask) NPreds() int {
 }
 
 func (t *BaseTask) AddPreds(i int) {
-	t.nPreds+=i
+	t.nPreds += i
 }
 
-func (t BaseTask) GetDotID() string   {
+func (t BaseTask) GetDotID() string {
 	return t.dotID
 }
 
@@ -208,7 +210,7 @@ func (t BaseTask) OutputIndex() int32 {
 	return t.Index
 }
 
-func (t BaseTask) OutputTask() Task               {
+func (t BaseTask) OutputTask() Task {
 	return t.outputTask
 }
 

@@ -75,7 +75,7 @@ func (r *runner) Start() error {
 	if !r.OkayToStart() {
 		return errors.New("Pipeline runner has already been started")
 	}
-	/*
+
 	go r.runLoop()
 
 	newRunsSubscription, err := r.orm.ListenForNewRuns()
@@ -101,7 +101,6 @@ func (r *runner) Start() error {
 		}()
 	}
 
-	 */
 	return nil
 }
 
@@ -110,14 +109,11 @@ func (r *runner) Close() error {
 		return errors.New("Pipeline runner has already been stopped")
 	}
 
-	/*
 	close(r.chStop)
 	<-r.chDone
 	if r.newRuns != nil {
 		r.newRuns.Close()
 	}
-	*
-	 */
 
 	return nil
 }
@@ -168,12 +164,12 @@ func NewRun(spec Spec, startedAt time.Time) (run Run, err error) {
 		return run, err
 	}
 	taskRuns := make([]TaskRun, len(tasks))
-	for i, task:= range tasks {
+	for i, task := range tasks {
 		taskRuns[i] = TaskRun{
-			Type:               task.Type(),
+			Type: task.Type(),
 			//PipelineTaskSpecID: taskSpec.ID,
 			//PipelineTaskSpec:   taskSpec,
-			CreatedAt:          startedAt,
+			CreatedAt: startedAt,
 		}
 	}
 	run = Run{
@@ -210,23 +206,22 @@ func (r *runner) ResultsForRun(ctx context.Context, runID int64) ([]Result, erro
 // NOTE: This could potentially run on a different machine in the cluster than
 // the one that originally added the job run.
 func (r *runner) processUnfinishedRuns() {
-	//_, err := r.processRun()
-	//if err != nil {
-	//	logger.Errorf("Error processing unfinished run: %v", err)
-	//}
+	_, err := r.processRun()
+	if err != nil {
+		logger.Errorf("Error processing unfinished run: %v", err)
+	}
 }
 
-/*
 func (r *runner) processRun() (anyRemaining bool, err error) {
 	ctx, cancel := utils.CombinedContext(r.chStop, r.config.JobPipelineMaxRunDuration())
 	defer cancel()
 
 	return r.orm.ProcessNextUnfinishedRun(ctx, r.executeRun)
-}*/
+}
 
 type (
 	memoryTaskRun struct {
-		task  		  Task
+		task          Task
 		taskRun       TaskRun
 		next          *memoryTaskRun
 		nPredecessors int
@@ -265,7 +260,7 @@ func (r *runner) ExecuteRun(ctx context.Context, spec Spec, l logger.Logger) (tr
 func (r *runner) executeRun(ctx context.Context, txdb *gorm.DB, spec Spec, l logger.Logger) (TaskRunResults, error) {
 	l.Debugw("Initiating tasks for pipeline run of spec", "spec", spec.ID)
 	var (
-		err error
+		err  error
 		trrs TaskRunResults
 	)
 	startRun := time.Now()
@@ -273,7 +268,7 @@ func (r *runner) executeRun(ctx context.Context, txdb *gorm.DB, spec Spec, l log
 	d := TaskDAG{}
 	err = d.UnmarshalText([]byte(spec.DotDagSource))
 	if err != nil {
-		return trrs,  err
+		return trrs, err
 	}
 
 	// HACK: This mutex is necessary to work around a bug in the pq driver that
@@ -291,7 +286,7 @@ func (r *runner) executeRun(ctx context.Context, txdb *gorm.DB, spec Spec, l log
 	all := make(map[string]*memoryTaskRun)
 	var graph []*memoryTaskRun
 	for _, task := range tasks {
-		if (task.Type() == TaskTypeHTTP) {
+		if task.Type() == TaskTypeHTTP {
 			task.(*HTTPTask).config = r.config
 		}
 		if task.Type() == TaskTypeBridge {
@@ -301,11 +296,12 @@ func (r *runner) executeRun(ctx context.Context, txdb *gorm.DB, spec Spec, l log
 		}
 		mtr := memoryTaskRun{
 			nPredecessors: task.NPreds(),
-			task: task,
+			task:          task,
 			taskRun: TaskRun{
-				Type: task.Type(),
-				CreatedAt: 	startedAt,
-				Index: task.OutputIndex(),
+				Type:      task.Type(),
+				CreatedAt: startedAt,
+				Index:     task.OutputIndex(),
+				DotID:     task.GetDotID(),
 			},
 		}
 		if mtr.nPredecessors == 0 {
@@ -316,13 +312,12 @@ func (r *runner) executeRun(ctx context.Context, txdb *gorm.DB, spec Spec, l log
 
 	// Populate next pointers
 	for did, ts := range all {
-		if ts.task.OutputTask()	 != nil {
+		if ts.task.OutputTask() != nil {
 			all[did].next = all[ts.task.OutputTask().GetDotID()]
 		} else {
 			all[did].next = nil
 		}
 	}
-
 
 	// TODO: Test with multiple and single null successor IDs
 	// https://www.pivotaltracker.com/story/show/176557536
@@ -362,8 +357,10 @@ func (r *runner) executeRun(ctx context.Context, txdb *gorm.DB, spec Spec, l log
 				finishedAt := time.Now()
 
 				trr := TaskRunResult{
-					ID:         m.taskRun.ID,
+					//ID:         m.taskRun.ID,
 					//TaskSpecID: m.taskRun.PipelineTaskSpec.ID,
+					TaskRun:    m.taskRun,
+					Task:       m.task,
 					Result:     result,
 					FinishedAt: finishedAt,
 					IsTerminal: m.next == nil,

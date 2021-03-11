@@ -101,7 +101,7 @@ func TestRunner(t *testing.T) {
 		results, err := runner.ResultsForRun(context.Background(), runID)
 		require.NoError(t, err)
 
-		assert.Len(t, results, 2)
+		require.Len(t, results, 2)
 		assert.NoError(t, results[0].Error)
 		assert.NoError(t, results[1].Error)
 		assert.Equal(t, "6225.6", results[0].Value)
@@ -110,7 +110,7 @@ func TestRunner(t *testing.T) {
 		// Verify individual task results
 		var runs []pipeline.TaskRun
 		err = db.
-			Preload("PipelineTaskSpec").
+			//Preload("PipelineTaskSpec").
 			Where("pipeline_run_id = ?", runID).
 			Find(&runs).Error
 		assert.NoError(t, err)
@@ -213,7 +213,7 @@ func TestRunner(t *testing.T) {
 		// Verify individual task results
 		var runs []pipeline.TaskRun
 		err = db.
-			Preload("PipelineTaskSpec").
+			//Preload("PipelineTaskSpec").
 			Where("pipeline_run_id = ?", runID).
 			Find(&runs).Error
 		assert.NoError(t, err)
@@ -274,7 +274,7 @@ func TestRunner(t *testing.T) {
 		// Verify individual task results
 		var runs []pipeline.TaskRun
 		err = db.
-			Preload("PipelineTaskSpec").
+			//Preload("PipelineTaskSpec").
 			Where("pipeline_run_id = ?", runID).
 			Find(&runs).Error
 		assert.NoError(t, err)
@@ -333,7 +333,7 @@ func TestRunner(t *testing.T) {
 		// Verify individual task results
 		var runs []pipeline.TaskRun
 		err = db.
-			Preload("PipelineTaskSpec").
+			//Preload("PipelineTaskSpec").
 			Where("pipeline_run_id = ?", runID).
 			Find(&runs).Error
 		assert.NoError(t, err)
@@ -383,7 +383,7 @@ ds1 -> ds1_parse;
 		err = jobORM.CreateJob(context.Background(), &os, os.Pipeline)
 		require.NoError(t, err)
 		var jb job.SpecDB
-		err = db.Preload("PipelineSpec.PipelineTaskSpecs").
+		err = db.Preload("PipelineSpec").
 			Preload("OffchainreportingOracleSpec").Where("id = ?", os.ID).
 			First(&jb).Error
 		require.NoError(t, err)
@@ -426,7 +426,7 @@ ds1 -> ds1_parse;
 		err = jobORM.CreateJob(context.Background(), &os, os.Pipeline)
 		require.NoError(t, err)
 		var jb job.SpecDB
-		err = db.Preload("PipelineSpec.PipelineTaskSpecs").
+		err = db.Preload("PipelineSpec").
 			Preload("OffchainreportingOracleSpec").
 			Where("id = ?", os.ID).
 			First(&jb).Error
@@ -485,7 +485,7 @@ ds1 -> ds1_parse;
 		err = jobORM.CreateJob(context.Background(), &os, os.Pipeline)
 		require.NoError(t, err)
 		var jb job.SpecDB
-		err = db.Preload("PipelineSpec.PipelineTaskSpecs").
+		err = db.Preload("PipelineSpec").
 			Preload("OffchainreportingOracleSpec").Where("id = ?", os.ID).
 			First(&jb).Error
 		require.NoError(t, err)
@@ -532,7 +532,7 @@ ds1 -> ds1_parse;
 		err = jobORM.CreateJob(context.Background(), &os, os.Pipeline)
 		require.NoError(t, err)
 		var jb job.SpecDB
-		err = db.Preload("PipelineSpec.PipelineTaskSpecs").
+		err = db.Preload("PipelineSpec").
 			Preload("OffchainreportingOracleSpec").
 			Where("id = ?", os.ID).
 			First(&jb).Error
@@ -572,7 +572,7 @@ ds1 -> ds1_parse;
 		err = jobORM.CreateJob(context.Background(), &os, os.Pipeline)
 		require.NoError(t, err)
 		var jb job.SpecDB
-		err = db.Preload("PipelineSpec.PipelineTaskSpecs").
+		err = db.Preload("PipelineSpec").
 			Preload("OffchainreportingOracleSpec").Where("id = ?", os.ID).
 			First(&jb).Error
 		require.NoError(t, err)
@@ -609,7 +609,7 @@ ds1 -> ds1_parse;
 		err = jobORM.CreateJob(context.Background(), dbSpec, dbSpec.Pipeline)
 		require.NoError(t, err)
 		var jb job.SpecDB
-		err = db.Preload("PipelineSpec.PipelineTaskSpecs").
+		err = db.Preload("PipelineSpec").
 			Preload("OffchainreportingOracleSpec").Where("id = ?", dbSpec.ID).
 			First(&jb).Error
 		require.NoError(t, err)

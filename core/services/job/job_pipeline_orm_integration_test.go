@@ -78,17 +78,17 @@ func TestPipelineORM_Integration(t *testing.T) {
 	}
 	expectedTasks := []pipeline.Task{result, answer1, answer2, ds1_multiply, ds1_parse, ds1, ds2_multiply, ds2_parse, ds2}
 	/*
-	var expectedTaskSpecs []pipeline.TaskSpec
-	for _, task := range expectedTasks {
-		expectedTaskSpecs = append(expectedTaskSpecs, pipeline.TaskSpec{
-			DotID:          task.GetDotID(),
-			PipelineSpecID: specID,
-			Type:           task.Type(),
-			JSON:           pipeline.JSONSerializable{Val: task},
-			Index:          task.OutputIndex(),
-		})
-	}
-	 */
+		var expectedTaskSpecs []pipeline.TaskSpec
+		for _, task := range expectedTasks {
+			expectedTaskSpecs = append(expectedTaskSpecs, pipeline.TaskSpec{
+				DotID:          task.GetDotID(),
+				PipelineSpecID: specID,
+				Type:           task.Type(),
+				JSON:           pipeline.JSONSerializable{Val: task},
+				Index:          task.OutputIndex(),
+			})
+		}
+	*/
 
 	_, bridge := cltest.NewBridgeType(t, "voter_turnout", "blah")
 	require.NoError(t, db.Create(bridge).Error)
@@ -164,16 +164,16 @@ func TestPipelineORM_Integration(t *testing.T) {
 		pipelineSpecID := pipelineSpecs[0].ID
 
 		/*
-		var taskSpecs []pipeline.TaskSpec
-		err = db.Find(&taskSpecs).Error
-		require.NoError(t, err)
+			var taskSpecs []pipeline.TaskSpec
+			err = db.Find(&taskSpecs).Error
+			require.NoError(t, err)
 
-		var taskSpecIDs []int32
-		for _, taskSpec := range taskSpecs {
-			taskSpecIDs = append(taskSpecIDs, taskSpec.ID)
-		}
+			var taskSpecIDs []int32
+			for _, taskSpec := range taskSpecs {
+				taskSpecIDs = append(taskSpecIDs, taskSpec.ID)
+			}
 
-		 */
+		*/
 
 		// Create the run
 		runID, err = orm.CreateRun(context.Background(), dbSpec.ID, nil)
@@ -319,11 +319,11 @@ func TestPipelineORM_Integration(t *testing.T) {
 				// Process the run
 				{
 					var anyRemaining bool
-					anyRemaining, err = orm.ProcessNextUnfinishedRun(context.Background(), func(_ context.Context, db *gorm.DB, run pipeline.Run, l logger.Logger) (trrs pipeline.TaskRunResults, err error) {
+					anyRemaining, err = orm.ProcessNextUnfinishedRun(context.Background(), func(_ context.Context, db *gorm.DB, spec pipeline.Spec, l logger.Logger) (trrs pipeline.TaskRunResults, err error) {
 						for dotID, result := range test.answers {
 							var tr pipeline.TaskRun
 							require.NoError(t, db.
-								Joins("INNER JOIN pipeline_task_specs ON pipeline_task_specs.id = pipeline_task_runs.pipeline_task_spec_id AND dot_id = ?", dotID).
+								Where("dot_id = ?", dotID).
 								Where("pipeline_run_id = ? ", runID).
 								First(&tr).Error)
 							trr := pipeline.TaskRunResult{
@@ -342,7 +342,7 @@ func TestPipelineORM_Integration(t *testing.T) {
 
 				// Ensure that the ORM doesn't think there are more runs
 				{
-					anyRemaining, err2 := orm.ProcessNextUnfinishedRun(context.Background(), func(_ context.Context, db *gorm.DB, run pipeline.Run, l logger.Logger) (pipeline.TaskRunResults, error) {
+					anyRemaining, err2 := orm.ProcessNextUnfinishedRun(context.Background(), func(_ context.Context, db *gorm.DB, spec pipeline.Spec, l logger.Logger) (pipeline.TaskRunResults, error) {
 						t.Fatal("this callback should never be reached")
 						return nil, nil
 					})
@@ -367,7 +367,7 @@ func TestPipelineORM_Integration(t *testing.T) {
 					}
 
 					var finishedTaskRuns []pipeline.TaskRun
-					err = db.Preload("PipelineTaskSpec").Find(&finishedTaskRuns, "pipeline_run_id = ?", runID).Error
+					err = db.Find(&finishedTaskRuns, "pipeline_run_id = ?", runID).Error
 					require.NoError(t, err)
 					require.Len(t, finishedTaskRuns, len(expectedTasks))
 

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -134,8 +133,8 @@ func (t *HTTPTask) Run(ctx context.Context, taskRun TaskRun, inputs []Result) Re
 		return Result{Error: errors.Wrapf(err, "error making http request")}
 	}
 	elapsed := time.Since(start)
-	promHTTPFetchTime.WithLabelValues(fmt.Sprintf("%s", taskRun.DotID)).Set(float64(elapsed))
-	promHTTPResponseBodySize.WithLabelValues(fmt.Sprintf("%s", taskRun.DotID)).Set(float64(len(responseBytes)))
+	promHTTPFetchTime.WithLabelValues(taskRun.DotID).Set(float64(elapsed))
+	promHTTPResponseBodySize.WithLabelValues(taskRun.DotID).Set(float64(len(responseBytes)))
 
 	if statusCode >= 400 {
 		maybeErr := bestEffortExtractError(responseBytes)

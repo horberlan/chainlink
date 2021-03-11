@@ -787,18 +787,18 @@ func MustInsertSampleDirectRequestJob(t *testing.T, db *gorm.DB) job.SpecDB {
 	require.NoError(t, db.Create(&pspec).Error)
 
 	/*
-	finalTspec := pipeline.TaskSpec{PipelineSpecID: pspec.ID}
-	require.NoError(t, db.Create(&finalTspec).Error)
+		finalTspec := pipeline.TaskSpec{PipelineSpecID: pspec.ID}
+		require.NoError(t, db.Create(&finalTspec).Error)
 
-	tspecPath1 := pipeline.TaskSpec{PipelineSpecID: pspec.ID, SuccessorID: null.IntFrom(int64(finalTspec.ID))}
-	require.NoError(t, db.Create(&tspecPath1).Error)
+		tspecPath1 := pipeline.TaskSpec{PipelineSpecID: pspec.ID, SuccessorID: null.IntFrom(int64(finalTspec.ID))}
+		require.NoError(t, db.Create(&tspecPath1).Error)
 
-	tspecPath2_2 := pipeline.TaskSpec{PipelineSpecID: pspec.ID, SuccessorID: null.IntFrom(int64(finalTspec.ID))}
-	require.NoError(t, db.Create(&tspecPath2_2).Error)
+		tspecPath2_2 := pipeline.TaskSpec{PipelineSpecID: pspec.ID, SuccessorID: null.IntFrom(int64(finalTspec.ID))}
+		require.NoError(t, db.Create(&tspecPath2_2).Error)
 
-	tspecPath2_1 := pipeline.TaskSpec{PipelineSpecID: pspec.ID, SuccessorID: null.IntFrom(int64(tspecPath2_2.ID))}
-	require.NoError(t, db.Create(&tspecPath2_1).Error)
-	 */
+		tspecPath2_1 := pipeline.TaskSpec{PipelineSpecID: pspec.ID, SuccessorID: null.IntFrom(int64(tspecPath2_2.ID))}
+		require.NoError(t, db.Create(&tspecPath2_1).Error)
+	*/
 
 	drspec := job.DirectRequestSpec{}
 	require.NoError(t, db.Create(&drspec).Error)

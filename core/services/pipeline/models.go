@@ -23,7 +23,7 @@ func (Spec) TableName() string {
 	return "pipeline_specs"
 }
 
-// DEPRECATED here just for the emigration test.
+// DEPRECATED - to phase out slowly.
 type TaskSpec struct {
 	ID             int32             `json:"-" gorm:"primary_key"`
 	DotID          string            `json:"dotId"`

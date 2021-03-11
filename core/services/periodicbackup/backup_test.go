@@ -19,3 +19,12 @@ func TestPeriodicBackup_Run_Backup(t *testing.T) {
 	defer os.Remove(filepath.Join(os.TempDir(), fileName))
 	assert.NilError(t, err, "error not nil")
 }
+
+
+func TestPeriodicBackup_Error_for_too_short_period(t *testing.T) {
+
+}
+
+func TestPeriodicBackup_Error_no_pgdump_binary(t *testing.T) {
+
+}

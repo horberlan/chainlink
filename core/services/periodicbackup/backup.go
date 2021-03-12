@@ -2,14 +2,15 @@ package periodicbackup
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/smartcontractkit/chainlink/core/logger"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
+
+	"github.com/pkg/errors"
+	"github.com/smartcontractkit/chainlink/core/logger"
 )
 
 var (

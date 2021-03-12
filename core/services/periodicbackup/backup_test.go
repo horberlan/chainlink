@@ -1,13 +1,14 @@
 package periodicbackup
 
 import (
-	"github.com/smartcontractkit/chainlink/core/logger"
-	"github.com/smartcontractkit/chainlink/core/store/orm"
-	"gotest.tools/assert"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/smartcontractkit/chainlink/core/logger"
+	"github.com/smartcontractkit/chainlink/core/store/orm"
+	"gotest.tools/assert"
 )
 
 func TestPeriodicBackup_Run_Backup(t *testing.T) {

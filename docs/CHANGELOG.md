@@ -44,6 +44,12 @@ Name: "head_tracker_eth_connection_errors",
 Help: "The total number of eth node connection errors",
 ```
 
+- Add `DATABASE_BACKUP_FREQUENCY` configuration variable 
+  
+It's now possible to configure periodic database backups to be run at given frequency (and an initial one on node startup).
+This optional environment variable needs to be set to a duration of at least '1m'.
+
+
 ### Fixed
 
 - Improved handling of the case where we exceed the configured TX fee cap in

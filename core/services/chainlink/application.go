@@ -160,7 +160,7 @@ func NewApplication(config *orm.Config, ethClient eth.Client, advisoryLocker pos
 
 	if store.Config.DatabaseBackupFrequency() > 0 {
 		logger.Debug("PeriodicBackup: database backups are enabled")
-		periodicBackup := periodicbackup.NewBackgroundBackup(store.Config.DatabaseBackupFrequency(), store.Config.DatabaseURL(), config.RootDir(), logger.Default)
+		periodicBackup := periodicbackup.NewPeriodicBackup(store.Config.DatabaseBackupFrequency(), store.Config.DatabaseURL(), config.RootDir(), logger.Default)
 		subservices = append(subservices, periodicBackup)
 	} else {
 		logger.Debug("PeriodicBackup: database backups are disabled")

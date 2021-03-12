@@ -16,24 +16,32 @@ var (
   fileName = "db_backup.tar.gz"
 )
 
-type PeriodicBackup struct {
-  logger          *logger.Logger
-  databaseURL     url.URL
-  frequency       time.Duration
-  outputParentDir string
-  done            chan bool
-}
-
 type backupResult struct {
   size int64
   path string
 }
 
-func NewBackgroundBackup(frequency time.Duration, databaseURL url.URL, outputParentDir string, logger *logger.Logger) PeriodicBackup {
+type (
+  PeriodicBackup interface {
+    Start() error
+    Close() error
+    RunBackup() (*backupResult, error)
+}
+
+  periodicBackup struct {
+    logger          *logger.Logger
+    databaseURL     url.URL
+    frequency       time.Duration
+    outputParentDir string
+    done            chan bool
+  }
+)
+
+func NewPeriodicBackup(frequency time.Duration, databaseURL url.URL, outputParentDir string, logger *logger.Logger) PeriodicBackup {
   if frequency < time.Minute {
     logger.Fatalf("Database backup setting (%s=%v) is too frequent. Please set it to at least one minute.", "DATABASE_BACKUP_FREQUENCY", frequency)
   }
-  return PeriodicBackup{
+  return &periodicBackup{
     logger,
     databaseURL,
     frequency,
@@ -42,7 +50,7 @@ func NewBackgroundBackup(frequency time.Duration, databaseURL url.URL, outputPar
   }
 }
 
-func (backup PeriodicBackup) Start() error {
+func (backup periodicBackup) Start() error {
   backup.RunBackupGracefully()
 
   ticker := time.NewTicker(backup.frequency)
@@ -62,13 +70,13 @@ func (backup PeriodicBackup) Start() error {
   return nil
 }
 
-func (backup PeriodicBackup) Close() error {
+func (backup periodicBackup) Close() error {
   backup.done <- true
   return nil
   // what if backup is just running?
 }
 
-func (backup *PeriodicBackup) RunBackupGracefully() {
+func (backup *periodicBackup) RunBackupGracefully() {
   backup.logger.Info("PeriodicBackup: Starting database backup...")
   startAt := time.Now()
   result, err := backup.RunBackup()
@@ -83,7 +91,7 @@ func (backup *PeriodicBackup) RunBackupGracefully() {
   }
 }
 
-func (backup *PeriodicBackup) RunBackup() (*backupResult, error) {
+func (backup *periodicBackup) RunBackup() (*backupResult, error) {
 
   tmpFile, err := ioutil.TempFile(backup.outputParentDir, "db_backup")
   if err != nil {

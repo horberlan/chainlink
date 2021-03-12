@@ -12,7 +12,7 @@ import (
 
 func TestPeriodicBackup_Run_Backup(t *testing.T) {
   rawConfig := orm.NewConfig()
-  periodicBackup := NewBackgroundBackup(time.Minute, rawConfig.DatabaseURL(), os.TempDir(), logger.Default)
+  periodicBackup := NewPeriodicBackup(time.Minute, rawConfig.DatabaseURL(), os.TempDir(), logger.Default)
   _, err := periodicBackup.RunBackup()
 
   defer os.Remove(filepath.Join(os.TempDir(), fileName))

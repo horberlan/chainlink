@@ -1,137 +1,137 @@
 package periodicbackup
 
 import (
-  "fmt"
-  "github.com/pkg/errors"
-  "github.com/smartcontractkit/chainlink/core/logger"
-  "io/ioutil"
-  "net/url"
-  "os"
-  "os/exec"
-  "path/filepath"
-  "time"
+	"fmt"
+	"github.com/pkg/errors"
+	"github.com/smartcontractkit/chainlink/core/logger"
+	"io/ioutil"
+	"net/url"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"time"
 )
 
 var (
-  fileName = "db_backup.tar.gz"
+	fileName = "db_backup.tar.gz"
 )
 
 type backupResult struct {
-  size int64
-  path string
+	size int64
+	path string
 }
 
 type (
-  PeriodicBackup interface {
-    Start() error
-    Close() error
-    RunBackup() (*backupResult, error)
-}
+	PeriodicBackup interface {
+		Start() error
+		Close() error
+		RunBackup() (*backupResult, error)
+	}
 
-  periodicBackup struct {
-    logger          *logger.Logger
-    databaseURL     url.URL
-    frequency       time.Duration
-    outputParentDir string
-    done            chan bool
-  }
+	periodicBackup struct {
+		logger          *logger.Logger
+		databaseURL     url.URL
+		frequency       time.Duration
+		outputParentDir string
+		done            chan bool
+	}
 )
 
 func NewPeriodicBackup(frequency time.Duration, databaseURL url.URL, outputParentDir string, logger *logger.Logger) PeriodicBackup {
-  if frequency < time.Minute {
-    logger.Fatalf("Database backup setting (%s=%v) is too frequent. Please set it to at least one minute.", "DATABASE_BACKUP_FREQUENCY", frequency)
-  }
-  return &periodicBackup{
-    logger,
-    databaseURL,
-    frequency,
-    outputParentDir,
-    make(chan bool),
-  }
+	if frequency < time.Minute {
+		logger.Fatalf("Database backup setting (%s=%v) is too frequent. Please set it to at least one minute.", "DATABASE_BACKUP_FREQUENCY", frequency)
+	}
+	return &periodicBackup{
+		logger,
+		databaseURL,
+		frequency,
+		outputParentDir,
+		make(chan bool),
+	}
 }
 
 func (backup periodicBackup) Start() error {
-  backup.RunBackupGracefully()
+	backup.RunBackupGracefully()
 
-  ticker := time.NewTicker(backup.frequency)
+	ticker := time.NewTicker(backup.frequency)
 
-  go func() {
-    for {
-      select {
-      case <-backup.done:
-        ticker.Stop()
-        return
-      case <-ticker.C:
-        backup.RunBackupGracefully()
-      }
-    }
-  }()
+	go func() {
+		for {
+			select {
+			case <-backup.done:
+				ticker.Stop()
+				return
+			case <-ticker.C:
+				backup.RunBackupGracefully()
+			}
+		}
+	}()
 
-  return nil
+	return nil
 }
 
 func (backup periodicBackup) Close() error {
-  backup.done <- true
-  return nil
-  // what if backup is just running?
+	backup.done <- true
+	return nil
+	// what if backup is just running?
 }
 
 func (backup *periodicBackup) RunBackupGracefully() {
-  backup.logger.Info("PeriodicBackup: Starting database backup...")
-  startAt := time.Now()
-  result, err := backup.RunBackup()
-  duration := time.Now().Sub(startAt)
-  if err != nil {
-    backup.logger.Errorf("PeriodicBackup: Failed after %s with: %v", duration, err)
-  } else {
-    backup.logger.Infof("PeriodicBackup: Database backup finished successfully after %s: %d bytes written to %s", duration, result.size, result.path)
-    if duration > backup.frequency {
-      backup.logger.Warn("PeriodicBackup: Backup is taking longer to complete than the frequency")
-    }
-  }
+	backup.logger.Info("PeriodicBackup: Starting database backup...")
+	startAt := time.Now()
+	result, err := backup.RunBackup()
+	duration := time.Since(startAt)
+	if err != nil {
+		backup.logger.Errorf("PeriodicBackup: Failed after %s with: %v", duration, err)
+	} else {
+		backup.logger.Infof("PeriodicBackup: Database backup finished successfully after %s: %d bytes written to %s", duration, result.size, result.path)
+		if duration > backup.frequency {
+			backup.logger.Warn("PeriodicBackup: Backup is taking longer to complete than the frequency")
+		}
+	}
 }
 
 func (backup *periodicBackup) RunBackup() (*backupResult, error) {
 
-  tmpFile, err := ioutil.TempFile(backup.outputParentDir, "db_backup")
-  if err != nil {
-    return nil, errors.Wrap(err, "Failed to create a tmp file")
-  }
-  err = os.Remove(tmpFile.Name())
-  if err != nil {
-    return nil, errors.Wrap(err, "Failed to remove the tmp file before running backup")
-  }
+	tmpFile, err := ioutil.TempFile(backup.outputParentDir, "db_backup")
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to create a tmp file")
+	}
+	err = os.Remove(tmpFile.Name())
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to remove the tmp file before running backup")
+	}
 
-  cmd := exec.Command(
-    "pg_dump", backup.databaseURL.String(),
-    "-f", tmpFile.Name(),
-    "-F", "t", // format: tar
-  )
+	cmd := exec.Command(
+		"pg_dump", backup.databaseURL.String(),
+		"-f", tmpFile.Name(),
+		"-F", "t", // format: tar
+	)
 
-  _, err = cmd.Output()
+	_, err = cmd.Output()
 
-  if err != nil {
-    if ee, ok := err.(*exec.ExitError); ok {
-      return nil, errors.Wrap(err, fmt.Sprintf("pg_dump failed with output: %s", string(ee.Stderr)))
-    }
-    return nil, errors.Wrap(err, "pg_dump failed")
-  }
+	if err != nil {
+		if ee, ok := err.(*exec.ExitError); ok {
+			return nil, errors.Wrap(err, fmt.Sprintf("pg_dump failed with output: %s", string(ee.Stderr)))
+		}
+		return nil, errors.Wrap(err, "pg_dump failed")
+	}
 
-  finalFilePath := filepath.Join(backup.outputParentDir, fileName)
-  _ = os.Remove(finalFilePath)
-  err = os.Rename(tmpFile.Name(), finalFilePath)
-  if err != nil {
-    _ = os.Remove(tmpFile.Name())
-    return nil, errors.Wrap(err, "Failed to rename the temp file to the final backup file")
-  }
+	finalFilePath := filepath.Join(backup.outputParentDir, fileName)
+	_ = os.Remove(finalFilePath)
+	err = os.Rename(tmpFile.Name(), finalFilePath)
+	if err != nil {
+		_ = os.Remove(tmpFile.Name())
+		return nil, errors.Wrap(err, "Failed to rename the temp file to the final backup file")
+	}
 
-  file, err := os.Stat(finalFilePath)
-  if err != nil {
-    return nil, errors.Wrap(err, "Failed to access the final backup file")
-  }
+	file, err := os.Stat(finalFilePath)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to access the final backup file")
+	}
 
-  return &backupResult{
-    size: file.Size(),
-    path: finalFilePath,
-  }, nil
+	return &backupResult{
+		size: file.Size(),
+		path: finalFilePath,
+	}, nil
 }

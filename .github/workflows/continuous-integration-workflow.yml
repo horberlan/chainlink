@@ -43,7 +43,7 @@ jobs:
         with:
           args: psql -v ON_ERROR_STOP=1 --username postgres -h postgres -c "CREATE USER chainlink NOSUPERUSER CREATEDB;"
       - name: Install Postgres for CLI tools
-        run: sudo apt-get update && apt-get install -y postgresql
+        run: sudo apt-get update && apt-get install -y postgresql-client-13.2
       - name: Cache Yarn dependencies
         uses: actions/cache@v2
         with:

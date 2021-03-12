@@ -24,6 +24,11 @@ type PeriodicBackup struct {
   done chan bool
 }
 
+type backupResult struct {
+  size int64
+  path string
+}
+
 func NewBackgroundBackup(frequency time.Duration, databaseURL url.URL, outputParentDir string, logger *logger.Logger) PeriodicBackup {
   if frequency < time.Minute {
     logger.Fatalf("Database backup setting (%s=%v) is too frequent. Please set it to at least one minute.", "DATABASE_BACKUP_FREQUENCY", frequency)
@@ -66,23 +71,23 @@ func (backup PeriodicBackup) Close() error {
 
 func (backup *PeriodicBackup) RunBackupGracefully() {
   backup.logger.Info("PeriodicBackup: Running database backup...")
-  err := backup.RunBackup()
+  result, err := backup.RunBackup()
   if err != nil {
     backup.logger.Errorf("PeriodicBackup: Failed: %v", err)
   } else {
-    backup.logger.Info("PeriodicBackup: Database backup finished successfully")
+    backup.logger.Infof("PeriodicBackup: Database backup finished successfully: %d bytes written to %s", result.size, result.path)
   }
 }
 
-func (backup *PeriodicBackup) RunBackup() error {
+func (backup *PeriodicBackup) RunBackup() (*backupResult, error) {
 
   tmpFile, err := ioutil.TempFile(backup.outputParentDir, "db_backup")
   if err != nil {
-    return errors.Wrap(err, "Failed to create a tmp file")
+    return nil, errors.Wrap(err, "Failed to create a tmp file")
   }
   err = os.Remove(tmpFile.Name())
   if err != nil {
-    return errors.Wrap(err, "Failed to remove the tmp file before running backup")
+    return nil, errors.Wrap(err, "Failed to remove the tmp file before running backup")
   }
 
   cmd := exec.Command(
@@ -95,20 +100,26 @@ func (backup *PeriodicBackup) RunBackup() error {
 
   if err != nil {
     if ee, ok := err.(*exec.ExitError); ok {
-      return errors.Wrap(err, fmt.Sprintf("pg_dump failed with output: %s", string(ee.Stderr)))
+      return nil, errors.Wrap(err, fmt.Sprintf("pg_dump failed with output: %s", string(ee.Stderr)))
     }
-    return errors.Wrap(err, "pg_dump failed")
+    return nil, errors.Wrap(err, "pg_dump failed")
   }
-
-  defer os.Remove(tmpFile.Name())
 
   finalFilePath := filepath.Join(backup.outputParentDir, fileName)
   _ = os.Remove(finalFilePath)
   err = os.Rename(tmpFile.Name(), finalFilePath)
   if err != nil {
-    return errors.Wrap(err, "Failed to rename the temp file to the final backup file")
+    _ = os.Remove(tmpFile.Name())
+    return nil, errors.Wrap(err, "Failed to rename the temp file to the final backup file")
   }
 
-  //TODO: verify that the file exists
-  return nil
+  file, err := os.Stat(finalFilePath)
+  if err != nil {
+    return nil, errors.Wrap(err, "Failed to access the final backup file")
+  }
+
+  return &backupResult{
+    size: file.Size(),
+    path: finalFilePath,
+  }, nil
 }

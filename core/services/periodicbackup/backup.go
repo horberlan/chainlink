@@ -69,12 +69,17 @@ func (backup PeriodicBackup) Close() error {
 }
 
 func (backup *PeriodicBackup) RunBackupGracefully() {
-  backup.logger.Info("PeriodicBackup: Running database backup...")
+  backup.logger.Info("PeriodicBackup: Starting database backup...")
+  startAt := time.Now()
   result, err := backup.RunBackup()
+  duration := time.Now().Sub(startAt)
   if err != nil {
-    backup.logger.Errorf("PeriodicBackup: Failed: %v", err)
+    backup.logger.Errorf("PeriodicBackup: Failed after %s with: %v", duration, err)
   } else {
-    backup.logger.Infof("PeriodicBackup: Database backup finished successfully: %d bytes written to %s", result.size, result.path)
+    backup.logger.Infof("PeriodicBackup: Database backup finished successfully after %s: %d bytes written to %s", duration, result.size, result.path)
+    if duration > backup.frequency {
+      backup.logger.Warn("PeriodicBackup: Backup is taking longer to complete than the frequency")
+    }
   }
 }
 

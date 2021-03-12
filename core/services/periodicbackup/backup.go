@@ -15,6 +15,7 @@ import (
 
 var (
 	fileName = "db_backup.tar.gz"
+	minBackupFrequency = time.Minute
 )
 
 type backupResult struct {
@@ -26,7 +27,6 @@ type (
 	PeriodicBackup interface {
 		Start() error
 		Close() error
-		RunBackup() (*backupResult, error)
 	}
 
 	periodicBackup struct {
@@ -39,9 +39,6 @@ type (
 )
 
 func NewPeriodicBackup(frequency time.Duration, databaseURL url.URL, outputParentDir string, logger *logger.Logger) PeriodicBackup {
-	if frequency < time.Minute {
-		logger.Fatalf("Database backup setting (%s=%v) is too frequent. Please set it to at least one minute.", "DATABASE_BACKUP_FREQUENCY", frequency)
-	}
 	return &periodicBackup{
 		logger,
 		databaseURL,
@@ -52,7 +49,7 @@ func NewPeriodicBackup(frequency time.Duration, databaseURL url.URL, outputParen
 }
 
 func (backup periodicBackup) Start() error {
-	backup.RunBackupGracefully()
+	backup.runBackupGracefully()
 
 	ticker := time.NewTicker(backup.frequency)
 
@@ -63,7 +60,11 @@ func (backup periodicBackup) Start() error {
 				ticker.Stop()
 				return
 			case <-ticker.C:
-				backup.RunBackupGracefully()
+				if backup.frequencyIsTooSmall() {
+					logger.Errorf("Database backup frequency (%s=%v) is too small. Please set it to at least %s", "DATABASE_BACKUP_FREQUENCY", backup.frequency, minBackupFrequency)
+					continue
+				}
+				backup.runBackupGracefully()
 			}
 		}
 	}()
@@ -74,13 +75,16 @@ func (backup periodicBackup) Start() error {
 func (backup periodicBackup) Close() error {
 	backup.done <- true
 	return nil
-	// what if backup is just running?
 }
 
-func (backup *periodicBackup) RunBackupGracefully() {
+func (backup *periodicBackup) frequencyIsTooSmall() bool {
+	return backup.frequency < minBackupFrequency
+}
+
+func (backup *periodicBackup) runBackupGracefully() {
 	backup.logger.Info("PeriodicBackup: Starting database backup...")
 	startAt := time.Now()
-	result, err := backup.RunBackup()
+	result, err := backup.runBackup()
 	duration := time.Since(startAt)
 	if err != nil {
 		backup.logger.Errorf("PeriodicBackup: Failed after %s with: %v", duration, err)
@@ -92,7 +96,7 @@ func (backup *periodicBackup) RunBackupGracefully() {
 	}
 }
 
-func (backup *periodicBackup) RunBackup() (*backupResult, error) {
+func (backup *periodicBackup) runBackup() (*backupResult, error) {
 
 	tmpFile, err := ioutil.TempFile(backup.outputParentDir, "db_backup")
 	if err != nil {

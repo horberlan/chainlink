@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	fileName = "db_backup.tar.gz"
+	fileName           = "db_backup.tar.gz"
 	minBackupFrequency = time.Minute
 )
 

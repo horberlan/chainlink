@@ -1,6 +1,6 @@
+#!/bin/bash
 
-
-DB_FILE="/Users/piotr/.chainlink-rinkeby/db_backup.tar.gz"
+DB_FILE="$1"
 DB_SUPER_USER="postgres"
 DB_USER="postgres"
 DB_NAME="chainlink_fallback_db"

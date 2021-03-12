@@ -23,29 +23,6 @@ func (Spec) TableName() string {
 	return "pipeline_specs"
 }
 
-// DEPRECATED - to phase out slowly.
-type TaskSpec struct {
-	ID             int32             `json:"-" gorm:"primary_key"`
-	DotID          string            `json:"dotId"`
-	PipelineSpecID int32             `json:"-"`
-	PipelineSpec   Spec              `json:"-"`
-	Type           TaskType          `json:"-"`
-	JSON           JSONSerializable  `json:"-" gorm:"type:jsonb"`
-	Index          int32             `json:"-"`
-	SuccessorID    null.Int          `json:"-"`
-	CreatedAt      time.Time         `json:"-"`
-	BridgeName     *string           `json:"-"`
-	Bridge         models.BridgeType `json:"-" gorm:"foreignKey:BridgeName;->"`
-}
-
-func (TaskSpec) TableName() string {
-	return "pipeline_task_specs"
-}
-
-func (s TaskSpec) IsFinalPipelineOutput() bool {
-	return s.SuccessorID.IsZero()
-}
-
 type Run struct {
 	ID               int64            `json:"-" gorm:"primary_key"`
 	PipelineSpecID   int32            `json:"-"`
@@ -106,10 +83,6 @@ type TaskRun struct {
 	FinishedAt    *time.Time        `json:"finishedAt"`
 	Index         int32
 	DotID         string
-
-	// Deprecated
-	//PipelineTaskSpecID int32             `json:"-"`
-	//PipelineTaskSpec   TaskSpec          `json:"taskSpec" gorm:"foreignkey:PipelineTaskSpecID;->"`
 }
 
 func (TaskRun) TableName() string {

@@ -17,11 +17,11 @@ var (
 )
 
 type PeriodicBackup struct {
-  logger *logger.Logger
-  databaseURL url.URL
-  frequency time.Duration
+  logger          *logger.Logger
+  databaseURL     url.URL
+  frequency       time.Duration
   outputParentDir string
-  done chan bool
+  done            chan bool
 }
 
 type backupResult struct {
@@ -33,7 +33,7 @@ func NewBackgroundBackup(frequency time.Duration, databaseURL url.URL, outputPar
   if frequency < time.Minute {
     logger.Fatalf("Database backup setting (%s=%v) is too frequent. Please set it to at least one minute.", "DATABASE_BACKUP_FREQUENCY", frequency)
   }
-  return PeriodicBackup {
+  return PeriodicBackup{
     logger,
     databaseURL,
     frequency,
@@ -41,7 +41,6 @@ func NewBackgroundBackup(frequency time.Duration, databaseURL url.URL, outputPar
     make(chan bool),
   }
 }
-
 
 func (backup PeriodicBackup) Start() error {
   backup.RunBackupGracefully()

@@ -86,7 +86,7 @@ func (backup *PeriodicBackup) RunBackup() error {
   }
 
   cmd := exec.Command(
-    "docker exec postgres pg_dump", backup.databaseURL.String(),
+    "pg_dump", backup.databaseURL.String(),
     "-f", tmpFile.Name(),
     "-F", "t", // format: tar
   )

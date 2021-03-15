@@ -274,9 +274,9 @@ func TestORM_DeleteJob_DeletesAssociatedRecords(t *testing.T) {
 	defer orm.Close()
 
 	t.Run("it deletes records for offchainreporting jobs", func(t *testing.T) {
-		_, bridge := cltest.NewBridgeType(t, "voter_turnout", "blah")
+		_, bridge := cltest.NewBridgeType(t, "voter_turnout", "http://blah.com")
 		require.NoError(t, db.Create(bridge).Error)
-		_, bridge2 := cltest.NewBridgeType(t, "election_winner", "blah")
+		_, bridge2 := cltest.NewBridgeType(t, "election_winner", "http://blah.com")
 		require.NoError(t, db.Create(bridge2).Error)
 
 		key := cltest.MustInsertRandomKey(t, store.DB)

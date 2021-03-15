@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"gorm.io/gorm/clause"
+
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -174,24 +176,15 @@ func (o *orm) processNextUnfinishedRun(ctx context.Context, fn ProcessRunFunc) e
 	var pRun Run
 
 	err := postgres.GormTransaction(txContext, o.db, func(tx *gorm.DB) error {
-		err := tx.Raw(`
-		SELECT * FROM pipeline_runs
-		WHERE finished_at IS NULL
-		ORDER BY id ASC
-		FOR UPDATE SKIP LOCKED
-		LIMIT 1
-		`).Scan(&pRun).Error
-		if err != nil {
-			return errors.Wrap(err, "error finding next pipeline run")
-		}
-		// NOTE: We have to lock and load in two distinct queries to work
-		// around a bizarre bug in gormv1.
-		// Trying to lock and load in one hit _sometimes_ fails to preload
-		// associations for no discernable reason.
-		err = tx.
+		err := tx.
 			Preload("PipelineSpec").
 			Preload("PipelineTaskRuns").
-			Where("pipeline_runs.id = ?", pRun.ID).
+			Where("pipeline_runs.finished_at IS NULL").
+			Order("id ASC").
+			Clauses(clause.Locking{
+				Strength: "UPDATE",
+				Options:  "SKIP LOCKED",
+			}).
 			First(&pRun).Error
 		if err != nil {
 			return errors.Wrap(err, "error loading run associations")
@@ -203,7 +196,8 @@ func (o *orm) processNextUnfinishedRun(ctx context.Context, fn ProcessRunFunc) e
 			return errors.Wrap(err, "error calling ProcessRunFunc")
 		}
 
-		// TODO: unhackify this
+		// Populate the task run result IDs by matching the dot
+		// IDs.
 		for i, trr := range trrs {
 			for _, tr := range pRun.PipelineTaskRuns {
 				if trr.TaskRun.DotID == tr.DotID {

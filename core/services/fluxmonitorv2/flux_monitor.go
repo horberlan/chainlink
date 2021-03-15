@@ -426,15 +426,22 @@ func (fm *FluxMonitor) SetOracleAddress() error {
 			}
 		}
 	}
+
+	loggerFields := []interface{}{
+		"accounts", accounts,
+		"oracleAddresses", oracleAddrs,
+	}
+
 	if len(accounts) > 0 {
 		addr := accounts[0].Address
-		fm.logger.Warnw("None of the node's keys matched any oracle addresses, using first available key. This flux monitor job may not work correctly", "address", addr)
+		loggerFields = append(loggerFields, "address", addr)
+		fm.logger.Warnw("None of the node's keys matched any oracle addresses, using first available key. This flux monitor job may not work correctly", loggerFields)
 		fm.oracleAddress = addr
 	} else {
-		fm.logger.Error("No keys found. This flux monitor job may not work correctly")
+		fm.logger.Error("No keys found. This flux monitor job may not work correctly", loggerFields)
 	}
-	return errors.New("none of the node's keys matched any oracle addresses")
 
+	return errors.New("none of the node's keys matched any oracle addresses")
 }
 
 // performInitialPoll performs the initial poll if required

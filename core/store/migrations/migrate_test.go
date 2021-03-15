@@ -186,7 +186,7 @@ func TestMigrate_PipelineTaskRunDotID(t *testing.T) {
 	_, orm, cleanup := cltest.BootstrapThrowawayORM(t, "migrations_task_run_dot_id", false)
 	defer cleanup()
 
-	require.NoError(t, migrations.MigrateUp(orm.DB, "0013_create_flux_monitor_round_stats_v2"))
+	require.NoError(t, migrations.MigrateUp(orm.DB, "0014_add_keeper_tables"))
 	// Add some task specs
 	ps := pipeline.Spec{
 		DotDagSource: "blah",
@@ -247,12 +247,12 @@ func TestMigrate_PipelineTaskRunDotID(t *testing.T) {
 	}
 	require.NoError(t, orm.DB.Create(&tr2).Error)
 
-	require.NoError(t, migrations.MigrateUp(orm.DB, "0014_pipeline_task_run_dot_id"))
+	require.NoError(t, migrations.MigrateUp(orm.DB, "0015_pipeline_task_run_dot_id"))
 	var ptrs []pipeline.TaskRun
 	require.NoError(t, orm.DB.Find(&ptrs).Error)
 	assert.Equal(t, "__result__", ptrs[0].DotID)
 	assert.Equal(t, "ds1", ptrs[1].DotID)
 
-	require.NoError(t, migrations.MigrateDownFrom(orm.DB, "0014_pipeline_task_run_dot_id"))
+	require.NoError(t, migrations.MigrateDownFrom(orm.DB, "0015_pipeline_task_run_dot_id"))
 
 }

@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	up14 = `
+	up15 = `
 ALTER TABLE pipeline_task_runs ADD COLUMN dot_id text; 
 UPDATE pipeline_task_runs SET dot_id = ts.dot_id FROM pipeline_task_specs ts WHERE ts.id = pipeline_task_runs.pipeline_task_spec_id;
 ALTER TABLE pipeline_task_runs ALTER COLUMN dot_id SET NOT NULL; 
@@ -16,7 +16,7 @@ ALTER TABLE pipeline_task_runs DROP CONSTRAINT pipeline_task_runs_pipeline_task_
 ALTER TABLE pipeline_task_runs DROP COLUMN pipeline_task_spec_id;
 DROP TABLE pipeline_task_specs;
 `
-	down14 = `
+	down15 = `
 ALTER TABLE pipeline_task_runs DROP COLUMN dot_id;
 CREATE TABLE public.pipeline_task_specs (
     id BIGSERIAL PRIMARY KEY,
@@ -37,12 +37,12 @@ CREATE INDEX idx_pipeline_task_specs_successor_id ON public.pipeline_task_specs 
 
 func init() {
 	Migrations = append(Migrations, &gormigrate.Migration{
-		ID: "0014_pipeline_task_run_dot_id",
+		ID: "0015_pipeline_task_run_dot_id",
 		Migrate: func(db *gorm.DB) error {
-			return db.Exec(up14).Error
+			return db.Exec(up15).Error
 		},
 		Rollback: func(db *gorm.DB) error {
-			return db.Exec(down14).Error
+			return db.Exec(down15).Error
 		},
 	})
 }

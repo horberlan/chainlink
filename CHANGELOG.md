@@ -1,5 +1,61 @@
 # Changelog Chainlink Core
 
+## 2.17.0 - PREVIEW
+
+## added
+
+- [#14239](https://github.com/smartcontractkit/chainlink/pull/14239) [`674eac31c`](https://github.com/smartcontractkit/chainlink/commit/674eac31cc161250fdadb838ba2a0fc7c796e932) Thanks [@bolekk](https://github.com/bolekk)! - #added Implements rate limiter for capabilities dispatcher
+
+- [#14041](https://github.com/smartcontractkit/chainlink/pull/14041) [`8d818ea26`](https://github.com/smartcontractkit/chainlink/commit/8d818ea265ff08887e61ace4f83364a3ee149ef0) Thanks [@amit-momin](https://github.com/amit-momin)! - Added gas limit estimation feature to EVM gas estimators. Introduced a new config `EVM.GasEstimator.EstimateLimit` to toggle this feature. #added
+
+- [#14298](https://github.com/smartcontractkit/chainlink/pull/14298) [`85b33fd9a`](https://github.com/smartcontractkit/chainlink/commit/85b33fd9acbd342d25bd84804d08451ab2590b97) Thanks [@AnieeG](https://github.com/AnieeG)! - moved deployments ccip tooling from ccip repo to chainlink repo #added
+
+## changed
+
+- [#14197](https://github.com/smartcontractkit/chainlink/pull/14197) [`7f69993c8`](https://github.com/smartcontractkit/chainlink/commit/7f69993c8655053b7550f50b817ba9c6888037e2) Thanks [@graham-chainlink](https://github.com/graham-chainlink)! - #changed Connect to multiple feeds managers on app start instead of just one (default to first)
+
+- [#14197](https://github.com/smartcontractkit/chainlink/pull/14197) [`7f69993c8`](https://github.com/smartcontractkit/chainlink/commit/7f69993c8655053b7550f50b817ba9c6888037e2) Thanks [@graham-chainlink](https://github.com/graham-chainlink)! - #changed Allow registration of more than 1 feeds manager on CreateFeedsManager
+
+- [#14281](https://github.com/smartcontractkit/chainlink/pull/14281) [`73c41d1f2`](https://github.com/smartcontractkit/chainlink/commit/73c41d1f27ac43ec6ed6a27368776b187c5e5e45) Thanks [@eutopian](https://github.com/eutopian)! - skip checking isJobManaged if the proposal in fms has already been deleted #changed
+
+## updated
+
+- [#14266](https://github.com/smartcontractkit/chainlink/pull/14266) [`c323e0d60`](https://github.com/smartcontractkit/chainlink/commit/c323e0d600c659a4ea584dbae0a0db187afd51eb) Thanks [@asoliman92](https://github.com/asoliman92)! - #updated move latest capabilities code from ccip repo to chainlink repo [CCIP-2946]
+
+## internal
+
+- [#14316](https://github.com/smartcontractkit/chainlink/pull/14316) [`2a21b170f`](https://github.com/smartcontractkit/chainlink/commit/2a21b170f38ded4cf0f15db283035e69b53aeeb9) Thanks [@graham-chainlink](https://github.com/graham-chainlink)! - #internal updated to latest operator-ui to bring in new UI changes for supporting multiple job distributors
+
+- [#14109](https://github.com/smartcontractkit/chainlink/pull/14109) [`2761cd5bc`](https://github.com/smartcontractkit/chainlink/commit/2761cd5bc5ed91bc17d4d67265ddc8fa03b84540) Thanks [@Farber98](https://github.com/Farber98)! - FilteredLogs receive Expression instead of whole KeyFilter. #internal
+
+- [#13735](https://github.com/smartcontractkit/chainlink/pull/13735) [`920413c3c`](https://github.com/smartcontractkit/chainlink/commit/920413c3ce2ca8effc138e69ec063b0ce5e94c6b) Thanks [@silaslenihan](https://github.com/silaslenihan)! - #internal Added ChainWriter to ChainReader tests
+
+- [#14234](https://github.com/smartcontractkit/chainlink/pull/14234) [`a234e14eb`](https://github.com/smartcontractkit/chainlink/commit/a234e14ebd266269b4d5893b0d2aeeb01bc58a70) Thanks [@huangzhen1997](https://github.com/huangzhen1997)! - use new estimation for insufficient fund instead of retry to overcome gas spike #internal
+
+- [#13833](https://github.com/smartcontractkit/chainlink/pull/13833) [`1ea9f7979`](https://github.com/smartcontractkit/chainlink/commit/1ea9f79793f646977b44e38a34b2e70c28b2849e) Thanks [@dimriou](https://github.com/dimriou)! - Introduce new gas estimator #internal
+
+- [#14313](https://github.com/smartcontractkit/chainlink/pull/14313) [`b71e692e7`](https://github.com/smartcontractkit/chainlink/commit/b71e692e7ba8523ec57ea5e10c5d9c6810e038e5) Thanks [@ferglor](https://github.com/ferglor)! - Use a lock to sync access to the ConfigDigest #internal
+
+- [#14314](https://github.com/smartcontractkit/chainlink/pull/14314) [`8fa3ebee3`](https://github.com/smartcontractkit/chainlink/commit/8fa3ebee3e0ce09bf2e8270ab46c168756d25db0) Thanks [@DeividasK](https://github.com/DeividasK)! - #internal validate capability trigger event ID before executing
+
+- [#14282](https://github.com/smartcontractkit/chainlink/pull/14282) [`1a2b7b61c`](https://github.com/smartcontractkit/chainlink/commit/1a2b7b61cbd22256e4e29e891a74228fa453fc9d) Thanks [@amit-momin](https://github.com/amit-momin)! - Updated TXM Confirmer logic to resume pending task runs with failure if transaction is terminally stuck #internal
+
+- [#14315](https://github.com/smartcontractkit/chainlink/pull/14315) [`adb3c9579`](https://github.com/smartcontractkit/chainlink/commit/adb3c957993f9f022db395fd54e65528631c1030) Thanks [@friedemannf](https://github.com/friedemannf)! - Handle zkEVM node level OOC error as TerminallyStuck #internal
+
+- [#14241](https://github.com/smartcontractkit/chainlink/pull/14241) [`7c248e7c4`](https://github.com/smartcontractkit/chainlink/commit/7c248e7c466ad278b0024e4ac743813009b16805) Thanks [@cds95](https://github.com/cds95)! - #internal index don ID in ConfigSet event
+
+- [#14252](https://github.com/smartcontractkit/chainlink/pull/14252) [`8490c9610`](https://github.com/smartcontractkit/chainlink/commit/8490c9610b1208f3efafe29587032679e5727247) Thanks [@martin-cll](https://github.com/martin-cll)! - Remove bid/ask fields for Mercury v4 schema #internal
+
+- [#14345](https://github.com/smartcontractkit/chainlink/pull/14345) [`c83c68735`](https://github.com/smartcontractkit/chainlink/commit/c83c68735bdee6bbd8510733b7415797cd08ecbd) Thanks [@makramkd](https://github.com/makramkd)! - #internal merge ccip contracts
+
+- [#14318](https://github.com/smartcontractkit/chainlink/pull/14318) [`544ded0af`](https://github.com/smartcontractkit/chainlink/commit/544ded0afa685de146da215a949ad08b3667bb99) Thanks [@winder](https://github.com/winder)! - #internal ccip reader nonces work.
+
+- [#14258](https://github.com/smartcontractkit/chainlink/pull/14258) [`7905901c4`](https://github.com/smartcontractkit/chainlink/commit/7905901c40fc6ab7c65066d02e2d63324e2d640f) Thanks [@ettec](https://github.com/ettec)! - #internal gas limit default value
+
+## untagged
+
+- [#14264](https://github.com/smartcontractkit/chainlink/pull/14264) [`33e6a0c1e`](https://github.com/smartcontractkit/chainlink/commit/33e6a0c1e44b805064fe423b5570a40c07daed41) Thanks [@chainchad](https://github.com/chainchad)! - Bump to start the next version
+
 ## 2.16.0 - UNRELEASED
 
 ### Minor Changes
@@ -318,7 +374,7 @@
 
 - [#13495](https://github.com/smartcontractkit/chainlink/pull/13495) [`483ee6ae06`](https://github.com/smartcontractkit/chainlink/commit/483ee6ae06f608d150ab360e0a3ffe6895b39d52) Thanks [@pavel-raykov](https://github.com/pavel-raykov)! - #updated Fix verb formatting in the log outputs.
 
-- [#13599](https://github.com/smartcontractkit/chainlink/pull/13599) [`e0ce0795b4`](https://github.com/smartcontractkit/chainlink/commit/e0ce0795b44f27539611327efce7c7c004511daa) Thanks [@pavel-raykov](https://github.com/pavel-raykov)! - #internal Add loggercheck linter to verify that \*w logging methods have even number of args.
+- [#13599](https://github.com/smartcontractkit/chainlink/pull/13599) [`e0ce0795b4`](https://github.com/smartcontractkit/chainlink/commit/e0ce0795b44f27539611327efce7c7c004511daa) Thanks [@pavel-raykov](https://github.com/pavel-raykov)! - #internal Add loggercheck linter to verify that *w logging methods have even number of args.
 
 ## 2.13.0 - 2024-07-01
 
@@ -655,7 +711,7 @@
 
 - [#12412](https://github.com/smartcontractkit/chainlink/pull/12412) [`83c8688a14`](https://github.com/smartcontractkit/chainlink/commit/83c8688a14ac04111f999d132673ebaf6a364b4a) Thanks [@poopoothegorilla](https://github.com/poopoothegorilla)! - Bump grafana to 1.1.1
 
-- [#12248](https://github.com/smartcontractkit/chainlink/pull/12248) [`e1950769ee`](https://github.com/smartcontractkit/chainlink/commit/e1950769ee3ff2a40ca5772b9634c45f8be241cc) Thanks [@FelixFan1992](https://github.com/FelixFan1992)! - Add version support for automation registry 2.\*
+- [#12248](https://github.com/smartcontractkit/chainlink/pull/12248) [`e1950769ee`](https://github.com/smartcontractkit/chainlink/commit/e1950769ee3ff2a40ca5772b9634c45f8be241cc) Thanks [@FelixFan1992](https://github.com/FelixFan1992)! - Add version support for automation registry 2.*
 
 ## 2.10.0 - 2024-04-05
 
@@ -1231,8 +1287,8 @@ The following `AUDIT_LOGGER_*` environment variables below configure this option
 
 An optional list of HTTP headers to be added for every optional audit log event. If the above `AUDIT_LOGGER_FORWARD_TO_URL` is set, audit log events will be POSTed to that URL, and will include headers specified in this environment variable. One example use case is auth for example: `AUDIT_LOGGER_HEADERS="Authorization||{{token}}"`.
 
-Header keys and values are delimited on ||, and multiple headers can be added with a forward slash delimiter ('\\'). An example of multiple key value pairs:
-`AUDIT_LOGGER_HEADERS="Authorization||{{token}}\Some-Other-Header||{{token2}}"`
+Header keys and values are delimited on ||, and multiple headers can be added with a forward slash delimiter ('\'). An example of multiple key value pairs:
+`AUDIT_LOGGER_HEADERS="Authorization||{{token}}Some-Other-Header||{{token2}}"`
 
 ##### AUDIT_LOGGER_JSON_WRAPPER_KEY
 
@@ -1444,7 +1500,7 @@ If minConfirmations > 0 and failOnRevert=true then the ethtx task will error on 
 
 If `minConfirmations` is not set on the task, the chain default will be used which is usually 12 and always greater than 0.
 
-- `http` task now allows specification of request headers. Use like so: `foo [type=http headers="[\\"X-Header-1\\", \\"value1\\", \\"X-Header-2\\", \\"value2\\"]"]`.
+- `http` task now allows specification of request headers. Use like so: `foo [type=http headers="[\"X-Header-1\", \"value1\", \"X-Header-2\", \"value2\"]"]`.
 
 ### Fixed
 
@@ -1460,7 +1516,7 @@ If `minConfirmations` is not set on the task, the chain default will be used whi
 
 ### Fixed
 
-- Ensure failed EthSubscribe didn't register a (\*rpc.ClientSubscription)(nil) which would lead to a panic on Unsubscribe
+- Ensure failed EthSubscribe didn't register a (*rpc.ClientSubscription)(nil) which would lead to a panic on Unsubscribe
 - Fixes parsing of float values on job specs
 
 ## [1.4.0] - 2022-05-02
@@ -1485,7 +1541,7 @@ If `minConfirmations` is not set on the task, the chain default will be used whi
 ### Added
 
 - Added support for Keeper registry v1.2 in keeper jobs
-- Added disk rotating logs. Chainlink will now always log to disk at debug level. The default output directory for debug logs is Chainlink's root directory (ROOT_DIR) but can be configured by setting LOG_FILE_DIR. This makes it easier for node operators to report useful debugging information to Chainlink's team, since all the debug logs are conveniently located in one directory. Regular logging to STDOUT still works as before and respects the LOG_LEVEL env var. If you want to log in disk at a particular level, you can pipe STDOUT to disk. This automatic debug-logs-to-disk feature is enabled by default, and will remain enabled as long as the `LOG_FILE_MAX_SIZE` ENV var is set to a value greater than zero. The amount of disk space required for this feature to work can be calculated with the following formula: `LOG_FILE_MAX_SIZE` \* (`LOG_FILE_MAX_BACKUPS` + 1). If your disk doesn't have enough disk space, the logging will pause and the application will log Errors until space is available again. New environment variables related to this feature:
+- Added disk rotating logs. Chainlink will now always log to disk at debug level. The default output directory for debug logs is Chainlink's root directory (ROOT_DIR) but can be configured by setting LOG_FILE_DIR. This makes it easier for node operators to report useful debugging information to Chainlink's team, since all the debug logs are conveniently located in one directory. Regular logging to STDOUT still works as before and respects the LOG_LEVEL env var. If you want to log in disk at a particular level, you can pipe STDOUT to disk. This automatic debug-logs-to-disk feature is enabled by default, and will remain enabled as long as the `LOG_FILE_MAX_SIZE` ENV var is set to a value greater than zero. The amount of disk space required for this feature to work can be calculated with the following formula: `LOG_FILE_MAX_SIZE` * (`LOG_FILE_MAX_BACKUPS` + 1). If your disk doesn't have enough disk space, the logging will pause and the application will log Errors until space is available again. New environment variables related to this feature:
   - `LOG_FILE_MAX_SIZE` (default: 5120mb) - this env var allows you to override the log file's max size (in megabytes) before file rotation.
   - `LOG_FILE_MAX_AGE` (default: 0) - if `LOG_FILE_MAX_SIZE` is set, this env var allows you to override the log file's max age (in days) before file rotation. Keeping this config with the default value means not to remove old log files.
   - `LOG_FILE_MAX_BACKUPS` (default: 1) - if `LOG_FILE_MAX_SIZE` is set, this env var allows you to override the max amount of old log files to retain. Keeping this config with the default value means to retain 1 old log file at most (though `LOG_FILE_MAX_AGE` may still cause them to get deleted). If this is set to 0, the node will retain all old log files instead.
@@ -2428,7 +2484,7 @@ Note that it has no effect on FMv1 jobs. Node operators will need to upgrade to 
 - Task definitions in v2 jobs (those with TOML specs) now support quoting strings with angle brackets (which DOT already permitted). This is particularly useful when defining JSON blobs to post to external adapters. For example:
 
   ```
-  my_bridge [type=bridge name="my_bridge" requestData="{\\"hi\\": \\"hello\\"}"]
+  my_bridge [type=bridge name="my_bridge" requestData="{\"hi\": \"hello\"}"]
   ```
 
   ... can now be written as:
